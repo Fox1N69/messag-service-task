@@ -2,7 +2,7 @@ package api
 
 import (
 	"messaggio/infra"
-	"messaggio/internal/manager"
+	"messaggio/internal/usecase"
 	"messaggio/pkg/http/middleware"
 	"messaggio/pkg/http/request"
 	"messaggio/pkg/util/logger"
@@ -18,7 +18,7 @@ type Server interface {
 type server struct {
 	infra      infra.Infra
 	app        *fiber.App
-	service    manager.ServiceManager
+	service    usecase.ServiceUseCase
 	middleware middleware.Middleware
 }
 
@@ -26,7 +26,7 @@ func NewServer(infra infra.Infra) Server {
 	return &server{
 		infra:      infra,
 		app:        fiber.New(),
-		service:    manager.NewServiceManager(infra),
+		service:    usecase.NewServiceUseCase(infra),
 		middleware: middleware.NewMiddleware(infra.Config().GetString("secret.key")),
 	}
 }

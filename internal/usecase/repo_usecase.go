@@ -1,4 +1,4 @@
-package manager
+package usecase
 
 import (
 	"messaggio/infra"
@@ -6,17 +6,17 @@ import (
 	"sync"
 )
 
-type RepoManager interface {
+type RepoUseCase interface {
 	MessageRepository() repository.MessageRepository
 }
 
-type repoManager struct {
+type repoUseCase struct {
 	infra infra.Infra
 }
 
-// NewRepoManager creates a new instance of RepoManager using the provided infrastructure.
-func NewRepoManager(infra infra.Infra) RepoManager {
-	return &repoManager{infra: infra}
+// NewRepoUseCase creates a new instance of RepoUseCase using the provided infrastructure.
+func NewRepoUseCase(infra infra.Infra) RepoUseCase {
+	return &repoUseCase{infra: infra}
 }
 
 var (
@@ -24,7 +24,7 @@ var (
 	messageRepository     repository.MessageRepository
 )
 
-func (rm *repoManager) MessageRepository() repository.MessageRepository {
+func (rm *repoUseCase) MessageRepository() repository.MessageRepository {
 	messageRepositoryOnce.Do(func() {
 		messageRepository = repository.NewMessageRepository(rm.infra.PSQLClient().Queries)
 	})
