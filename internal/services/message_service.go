@@ -1,6 +1,9 @@
 package services
 
-import "messaggio/internal/repository"
+import (
+	"context"
+	"messaggio/internal/repository"
+)
 
 type MessageService interface {
 }
@@ -15,3 +18,6 @@ func NewMessageService(messageRepository repository.MessageRepository) MessageSe
 	}
 }
 
+func (ms *messageService) CreateMessage(ctx context.Context, content string, statusID int64) (int64, error) {
+	return ms.repo.Create(ctx, content, statusID)
+}
