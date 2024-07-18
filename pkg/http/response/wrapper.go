@@ -1,7 +1,7 @@
 package response
 
 import (
-	"messaggio/internal/models"
+	"messaggio/internal/domain"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -23,7 +23,7 @@ func New(c *fiber.Ctx) Wrapper {
 //
 // It serializes the response into JSON format using the provided code and message.
 func (w *wrapper) Write(code int, message string) error {
-	return w.c.Status(code).JSON(models.Response{Code: code, Message: message})
+	return w.c.Status(code).JSON(domain.Response{Code: code, Message: message})
 }
 
 // Error writes a JSON response with the provided HTTP status code and error message.
@@ -31,5 +31,5 @@ func (w *wrapper) Write(code int, message string) error {
 // It serializes the response into JSON format using the provided code and the
 // error message extracted from the error object.
 func (w *wrapper) Error(code int, err error) error {
-	return w.c.Status(code).JSON(models.Response{Code: code, Message: err.Error()})
+	return w.c.Status(code).JSON(domain.Response{Code: code, Message: err.Error()})
 }

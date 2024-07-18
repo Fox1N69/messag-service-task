@@ -1,4 +1,4 @@
-package models
+package domain
 
 // Response represents a generic response structure for API responses.
 type Response struct {

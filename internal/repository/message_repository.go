@@ -41,4 +41,3 @@ func (mr *messageRepository) Create(ctx context.Context, content string, statusI
 
 	return id, nil
 }
-
