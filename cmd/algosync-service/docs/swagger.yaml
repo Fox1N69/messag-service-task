@@ -1,0 +1,160 @@
+definitions:
+  models.Client:
+    properties:
+      client_name:
+        type: string
+      cpu:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      memory:
+        type: string
+      need_restart:
+        type: boolean
+      priority:
+        type: number
+      spawned_at:
+        type: string
+      updated_at:
+        type: string
+      version:
+        type: integer
+    type: object
+  models.Response:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: сервис для синхронизации пользовательских алгоритмов
+  title: AlgorithmSync service
+  version: "1.0"
+paths:
+  /api/client/{id}:
+    delete:
+      consumes:
+        - application/json
+      description: DeleteClient deletes the client with the specified ID.
+      parameters:
+        - description: Client ID to delete
+          in: path
+          name: id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successfully deleted client
+          schema:
+            $ref: "#/definitions/models.Client"
+        "400":
+          description: error
+          schema:
+            $ref: "#/definitions/models.Response"
+        "501":
+          description: error
+          schema:
+            $ref: "#/definitions/models.Response"
+      summary: Delete a client
+    patch:
+      consumes:
+        - application/json
+      description: UpdateClient updates the specified client with new data.
+      parameters:
+        - description: Client ID to update
+          in: path
+          name: id
+          required: true
+          type: integer
+        - description: Updated client data
+          in: body
+          name: body
+          required: true
+          schema:
+            additionalProperties: true
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/models.Client"
+        "400":
+          description: error
+          schema:
+            $ref: "#/definitions/models.Response"
+      summary: UpdateClient an existing client
+  /api/client/add:
+    post:
+      consumes:
+        - application/json
+      description: AddClient creates a new client with the provided data.
+      parameters:
+        - description: Client object that needs to be added
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/models.Client"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successfully created client
+          schema:
+            $ref: "#/definitions/models.Client"
+        "400":
+          description: error
+          schema:
+            $ref: "#/definitions/models.Response"
+        "501":
+          description: error
+          schema:
+            $ref: "#/definitions/models.Response"
+      summary: Add new client to the database
+  /api/client/algorithm/{id}:
+    patch:
+      consumes:
+        - application/json
+      description:
+        UpdateAlgorithmStatus updates the algorithm status for the specified
+        client.
+      parameters:
+        - description: Algorithm ID to update
+          in: path
+          name: id
+          required: true
+          type: integer
+        - description: Updated algorithm status data
+          in: body
+          name: body
+          required: true
+          schema:
+            additionalProperties: true
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successfully updated algorithm status
+          schema:
+            $ref: "#/definitions/models.Client"
+        "400":
+          description: error
+          schema:
+            $ref: "#/definitions/models.Response"
+        "501":
+          description: error
+          schema:
+            $ref: "#/definitions/models.Response"
+      summary: Update algorithm status
+swagger: "2.0"

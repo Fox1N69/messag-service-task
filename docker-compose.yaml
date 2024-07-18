@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  algosync-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 8008
+      POSTGRES_DB: vortextest
+      DB_HOST: db
+      DB_PORT: 5432
+    volumes:
+      - ./config/config.json:/config/config.json  
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 8008
+      POSTGRES_DB: vortextest
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
