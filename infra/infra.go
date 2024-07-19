@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"messaggio/infra/k8s"
+	"messaggio/infra/kafka"
 	"messaggio/pkg/util/logger"
 	"messaggio/storage/postgres"
 	"sync"
@@ -22,6 +23,8 @@ type Infra interface {
 	RedisClient() *redis.Client
 	PSQLClient() *postgres.PSQLClient
 	KubernetesDeployer() k8s.KubernetesDeployer
+	KafkaProducer() *kafka.KafkaProducer
+	KafkaConsumer() *kafka.KafkaConsumer
 }
 
 type infra struct {
@@ -149,4 +152,40 @@ func (i *infra) PSQLClient() *postgres.PSQLClient {
 // It initializes a Kubernetes deployer used for managing deployments.
 func (i *infra) KubernetesDeployer() k8s.KubernetesDeployer {
 	return k8s.NewKubernetesDeployer()
+}
+
+var (
+	kafkaProducerOnce sync.Once
+	kafkaProducer     *kafka.KafkaProducer
+
+	kafkaConsumerOnce sync.Once
+	kafkaConsumer     *kafka.KafkaConsumer
+)
+
+func (i *infra) KafkaProducer() *kafka.KafkaProducer {
+	kafkaProducerOnce.Do(func() {
+		brokers := i.Config().Sub("kafka").GetStringSlice("bootstrap_servers")
+		var err error
+		kafkaProducer, err = kafka.NewKafkaProducer(brokers)
+		if err != nil {
+			logrus.Fatalf("[infra][KafkaProducer] %v", err)
+		}
+	})
+	return kafkaProducer
+}
+
+func (i *infra) KafkaConsumer() *kafka.KafkaConsumer {
+	kafkaConsumerOnce.Do(func() {
+		config := i.Config().Sub("kafka")
+		brokers := config.GetStringSlice("bootstrap_servers")
+		groupID := config.GetString("group_id")
+		topic := config.GetString("topic")
+		handler := &kafka.MessageHandler{}
+		var err error
+		kafkaConsumer, err = kafka.NewKafkaConsumer(brokers, groupID, topic, handler)
+		if err != nil {
+			logrus.Fatalf("[infra][KafkaConsumer] %v", err)
+		}
+	})
+	return kafkaConsumer
 }

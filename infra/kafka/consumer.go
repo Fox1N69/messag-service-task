@@ -1,44 +1,45 @@
 package kafka
 
 import (
+	"context"
 	"log"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/IBM/sarama"
 )
 
 type KafkaConsumer struct {
-	consumer *kafka.Consumer
+	consumer sarama.ConsumerGroup
+	topic    string
+	handler  sarama.ConsumerGroupHandler
 }
 
-func NewKafkaConsumer(brokers, groupID, topic string) (*KafkaConsumer, error) {
-	c, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": brokers,
-		"group.id":          groupID,
-		"auto.offset.reset": "earliest",
-	})
+func NewKafkaConsumer(brokers []string, groupID, topic string, handler sarama.ConsumerGroupHandler) (*KafkaConsumer, error) {
+	config := sarama.NewConfig()
+	config.Version = sarama.V2_1_0_0
+	config.Consumer.Offsets.Initial = sarama.OffsetOldest
+
+	consumer, err := sarama.NewConsumerGroup(brokers, groupID, config)
 	if err != nil {
 		return nil, err
 	}
-	err = c.SubscribeTopics([]string{topic}, nil)
-	if err != nil {
-		return nil, err
-	}
-	return &KafkaConsumer{consumer: c}, nil
+
+	return &KafkaConsumer{
+		consumer: consumer,
+		topic:    topic,
+		handler:  handler,
+	}, nil
 }
 
-func (kc *KafkaConsumer) ConsumerMessage(processMessage func([]byte) error) {
+func (kc *KafkaConsumer) ConsumeMessages() error {
+	ctx := context.Background()
 	for {
-		msg, err := kc.consumer.ReadMessage(-1)
-		if err != nil {
-			log.Printf("Consumer error: %v (%v)\n", err, msg)
-			continue
-		}
-		if err := processMessage(msg.Value); err != nil {
-			log.Printf("Failed to process message: %v\n", err)
+		if err := kc.consumer.Consume(ctx, []string{kc.topic}, kc.handler); err != nil {
+			log.Printf("Error consuming messages: %v", err)
+			return err
 		}
 	}
 }
 
-func (kc *KafkaConsumer) Close() {
-	kc.consumer.Close()
+func (kc *KafkaConsumer) Close() error {
+	return kc.consumer.Close()
 }

@@ -1,32 +1,44 @@
 package kafka
 
 import (
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"log"
+
+	"github.com/IBM/sarama"
 )
 
 type KafkaProducer struct {
-	producer *kafka.Producer
+	producer sarama.SyncProducer
 }
 
-func NewKafkaProducer(brokers string) (*KafkaProducer, error) {
-	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": brokers})
+func NewKafkaProducer(brokers []string) (*KafkaProducer, error) {
+	config := sarama.NewConfig()
+	config.Producer.RequiredAcks = sarama.WaitForAll
+	config.Producer.Retry.Max = 5
+	config.Producer.Return.Successes = true
+
+	producer, err := sarama.NewSyncProducer(brokers, config)
 	if err != nil {
 		return nil, err
 	}
-	return &KafkaProducer{producer: p}, nil
+
+	return &KafkaProducer{producer: producer}, nil
 }
 
 func (kp *KafkaProducer) ProduceMessage(topic string, message []byte) error {
-	err := kp.producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Value:          message,
-	}, nil)
+	msg := &sarama.ProducerMessage{
+		Topic: topic,
+		Value: sarama.ByteEncoder(message),
+	}
+
+	_, _, err := kp.producer.SendMessage(msg)
 	if err != nil {
 		return err
 	}
+
+	log.Printf("Produced message to topic %s: %s", topic, string(message))
 	return nil
 }
 
-func (kp *KafkaProducer) Close() {
-	kp.producer.Close()
+func (kp *KafkaProducer) Close() error {
+	return kp.producer.Close()
 }
