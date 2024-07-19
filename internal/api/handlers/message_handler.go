@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"messaggio/infra/kafka"
 	"messaggio/internal/dto"
 	"messaggio/internal/services"
 	"messaggio/pkg/http/response"
@@ -15,11 +16,16 @@ type MessageHandler interface {
 
 type messageHandler struct {
 	messageService services.MessageService
+	kafkaProducer  *kafka.KafkaProducer
 }
 
-func NewMessageHandler(messageService services.MessageService) MessageHandler {
+func NewMessageHandler(
+	messageService services.MessageService,
+	kafkaProducer *kafka.KafkaProducer,
+) MessageHandler {
 	return &messageHandler{
 		messageService: messageService,
+		kafkaProducer:  kafkaProducer,
 	}
 }
 
@@ -35,6 +41,12 @@ func (mh *messageHandler) CreateMessage(c *fiber.Ctx) error {
 	id, err := mh.messageService.CreateMessage(context.Background(), req.Content, req.StatusID)
 	if err != nil {
 		return response.Error(501, err)
+	}
+
+	kafkaMessage := []byte(req.Content)
+
+	if err := mh.kafkaProducer.ProduceMessage("messages", kafkaMessage); err != nil {
+		return response.Error(502, err)
 	}
 
 	return response.WriteMap(201, fiber.Map{

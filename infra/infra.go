@@ -171,6 +171,7 @@ func (i *infra) KafkaProducer() *kafka.KafkaProducer {
 			logrus.Fatalf("[infra][KafkaProducer] %v", err)
 		}
 	})
+
 	return kafkaProducer
 }
 
@@ -187,5 +188,6 @@ func (i *infra) KafkaConsumer() *kafka.KafkaConsumer {
 			logrus.Fatalf("[infra][KafkaConsumer] %v", err)
 		}
 	})
+
 	return kafkaConsumer
 }

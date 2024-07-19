@@ -68,7 +68,7 @@ func (c *server) handlers() {
 // It sets up routes for client management operations such as adding, updating, deleting clients,
 // and updating algorithm statuses associated with clients.
 func (c *server) v1() {
-	messagHandler := handlers.NewMessageHandler(c.service.MessageService())
+	messagHandler := handlers.NewMessageHandler(c.service.MessageService(), c.infra.KafkaProducer())
 
 	api := c.app.Group("/api")
 	{
