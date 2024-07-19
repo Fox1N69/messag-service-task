@@ -19,6 +19,7 @@ type MessageService interface {
 		kafkaPartition int32,
 		kafkaOffset int64,
 	) (int64, error)
+	MessageByContent(ctx context.Context, content string) (database.Message, error)
 }
 
 type messageService struct {
@@ -64,4 +65,8 @@ func (ms *messageService) CreateProcessed(
 	kafkaOffset int64,
 ) (int64, error) {
 	return ms.processedRepo.Create(ctx, messageID, kafkaTopic, kafkaPartition, kafkaOffset)
+}
+
+func (ms *messageService) MessageByContent(ctx context.Context, content string) (database.Message, error) {
+	return ms.repo.MessageByContent(ctx, content)
 }

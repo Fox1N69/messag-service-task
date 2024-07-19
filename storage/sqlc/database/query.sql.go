@@ -11,6 +11,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getMessageByContent = `-- name: GetMessageByContent :one
+SELECT id, content, created_at, status_id FROM messages WHERE content = $1 LIMIT 1
+`
+
+func (q *Queries) GetMessageByContent(ctx context.Context, content string) (Message, error) {
+	row := q.db.QueryRow(ctx, getMessageByContent, content)
+	var i Message
+	err := row.Scan(
+		&i.ID,
+		&i.Content,
+		&i.CreatedAt,
+		&i.StatusID,
+	)
+	return i, err
+}
+
 const getMessageByID = `-- name: GetMessageByID :one
 SELECT id,
   content,

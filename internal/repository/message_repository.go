@@ -14,6 +14,7 @@ type MessageRepository interface {
 	GetMessages(ctx context.Context) ([]database.Message, error)
 	MessageByID(ctx context.Context, messageID int64) (database.Message, error)
 	UpdateMessageStatus(ctx context.Context, statusID, id int64) error
+	MessageByContent(ctx context.Context, content string) (database.Message, error)
 }
 
 type messageRepository struct {
@@ -73,4 +74,12 @@ func (mr *messageRepository) UpdateMessageStatus(ctx context.Context, statusID, 
 	}
 
 	return nil
+}
+
+func (mr *messageRepository) MessageByContent(ctx context.Context, content string) (database.Message, error) {
+	message, err := mr.queries.GetMessageByContent(ctx, content)
+	if err != nil {
+		return database.Message{}, fmt.Errorf("failed to get message by content: %w", err)
+	}
+	return message, nil
 }

@@ -18,6 +18,9 @@ SELECT id,
 FROM messages
 WHERE id = $1;
 
+-- name: GetMessageByContent :one
+SELECT * FROM messages WHERE content = $1 LIMIT 1;
+
 -- name: GetTotalMessages :one
 SELECT COUNT(*) AS count FROM messages;
 

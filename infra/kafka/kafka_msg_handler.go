@@ -7,6 +7,7 @@ import (
 	"messaggio/internal/repository"
 
 	"github.com/IBM/sarama"
+	"github.com/golang/snappy"
 )
 
 type MessageHandler struct {
@@ -26,11 +27,19 @@ func NewKafkaMessageHandler(
 
 func (h *MessageHandler) Setup(_ sarama.ConsumerGroupSession) error   { return nil }
 func (h *MessageHandler) Cleanup(_ sarama.ConsumerGroupSession) error { return nil }
+
 func (h *MessageHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for msg := range claim.Messages() {
 		log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(msg.Value), msg.Timestamp, msg.Topic)
 
-		messageID, err := h.handleMessage(msg.Value)
+		// Декодирование сообщения Snappy
+		decodedMessage, err := snappy.Decode(nil, msg.Value)
+		if err != nil {
+			log.Printf("Error decoding Snappy message: %v", err)
+			continue
+		}
+
+		messageID, err := h.handleMessage(decodedMessage)
 		if err != nil {
 			log.Printf("Error handling message: %v", err)
 			continue
@@ -55,31 +64,31 @@ func (h *MessageHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sa
 
 func (h *MessageHandler) handleMessage(message []byte) (int64, error) {
 	// Декодируем сообщение и извлекаем ID
-	// Это может зависеть от формата сообщений
 	content := string(message)
-	// Получаем сообщение по содержимому
-	messages, err := h.messageRepo.GetMessages(context.Background())
+	messageID, err := h.findMessageID(content)
 	if err != nil {
-		return 0, err
-	}
-
-	var messageID int64
-	for _, m := range messages {
-		if m.Content == content {
-			messageID = m.ID
-			break
-		}
-	}
-
-	if messageID == 0 {
-		return 0, fmt.Errorf("message not found")
+		return 0, fmt.Errorf("failed to find message ID: %w", err)
 	}
 
 	// Обновляем статус сообщения на "Processed"
 	err = h.messageRepo.UpdateMessageStatus(context.Background(), 3, messageID) // assuming status ID 3 is "Processed"
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to update message status: %w", err)
 	}
 
 	return messageID, nil
+}
+
+func (h *MessageHandler) findMessageID(content string) (int64, error) {
+	// Оптимизированный поиск сообщения по содержимому
+	message, err := h.messageRepo.MessageByContent(context.Background(), content)
+	if err != nil {
+		return 0, fmt.Errorf("failed to find message by content: %w", err)
+	}
+
+	if message.ID == 0 {
+		return 0, fmt.Errorf("message not found")
+	}
+
+	return message.ID, nil
 }

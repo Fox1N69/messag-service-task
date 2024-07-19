@@ -8,6 +8,7 @@ import (
 	"messaggio/pkg/http/response"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/golang/snappy"
 )
 
 type MessageHandler interface {
@@ -45,8 +46,9 @@ func (mh *messageHandler) CreateMessage(c fiber.Ctx) error {
 	}
 
 	kafkaMessage := []byte(req.Content)
+	compressedMessage := snappy.Encode(nil, kafkaMessage)
 
-	if err := mh.kafkaProducer.ProduceMessage("messages", kafkaMessage); err != nil {
+	if err := mh.kafkaProducer.ProduceMessage("messages", compressedMessage); err != nil {
 		return response.Error(502, err)
 	}
 
