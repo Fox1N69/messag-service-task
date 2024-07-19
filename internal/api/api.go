@@ -28,6 +28,7 @@ type server struct {
 
 func NewServer(infra infra.Infra) Server {
 	logger := logger.GetLogger()
+
 	return &server{
 		infra: infra,
 		app: fiber.New(fiber.Config{
