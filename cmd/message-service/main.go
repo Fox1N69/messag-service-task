@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 	}
-	defer psqlClient.Close() // Ensure the database connection is closed
+	defer psqlClient.Close()
 	log.Info("Connected to PSQLClient")
 
 	// Setup signal handling

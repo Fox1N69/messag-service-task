@@ -28,10 +28,17 @@ type Infra interface {
 
 type infra struct {
 	configFile string
+	psqlClient *postgres.PSQLClient
 }
 
 func New(configFile string) Infra {
-	return &infra{configFile: configFile}
+	i := &infra{configFile: configFile}
+	var err error
+	i.psqlClient, err = i.PSQLClient() // Инициализация psqlClient
+	if err != nil {
+		logrus.Fatalf("[infra][New] %v", err)
+	}
+	return i
 }
 
 var (
@@ -131,27 +138,25 @@ func (i *infra) RedisClient() *redis.Client {
 	return rdb
 }
 
-var (
-	psqlClient *postgres.PSQLClient
-)
-
 // PSQLClient returns a PostgreSQL client instance initialized with the configuration settings.
 // It creates a new PostgreSQL client and establishes a connection using provided credentials.
 func (i *infra) PSQLClient() (*postgres.PSQLClient, error) {
-	config := i.Config().Sub("database")
-	user := config.GetString("user")
-	pass := config.GetString("pass")
-	host := config.GetString("host")
-	port := config.GetString("port")
-	name := config.GetString("name")
+	if i.psqlClient == nil {
+		config := i.Config().Sub("database")
+		user := config.GetString("user")
+		pass := config.GetString("pass")
+		host := config.GetString("host")
+		port := config.GetString("port")
+		name := config.GetString("name")
 
-	psqlClient := postgres.NewPSQLClient()
-	err := psqlClient.Connect(user, pass, host, port, name)
-	if err != nil {
-		return nil, err
+		psqlClient := postgres.NewPSQLClient()
+		err := psqlClient.Connect(user, pass, host, port, name)
+		if err != nil {
+			return nil, err
+		}
+		i.psqlClient = psqlClient
 	}
-
-	return psqlClient, nil
+	return i.psqlClient, nil
 }
 
 var (
@@ -177,14 +182,21 @@ func (i *infra) KafkaProducer() *kafka.KafkaProducer {
 
 func (i *infra) KafkaConsumer() *kafka.KafkaConsumer {
 	kafkaConsumerOnce.Do(func() {
+		if i.psqlClient == nil {
+			_, err := i.PSQLClient()
+			if err != nil {
+				logrus.Fatalf("[infra][KafkaConsumer] %v", err)
+			}
+		}
+
 		config := i.Config().Sub("kafka")
 		brokers := config.GetStringSlice("bootstrap_servers")
 		groupID := config.GetString("group_id")
 		topic := config.GetString("topic")
 
 		// Создаем репозитории
-		processedRepo := repository.NewProcessedMsgRepository(psqlClient.Queries)
-		messageRepo := repository.NewMessageRepository(psqlClient.Queries)
+		processedRepo := repository.NewProcessedMsgRepository(i.psqlClient.Queries)
+		messageRepo := repository.NewMessageRepository(i.psqlClient.Queries)
 
 		// Передаем репозитории в обработчик сообщений
 		handler := kafka.NewKafkaMessageHandler(processedRepo, messageRepo)

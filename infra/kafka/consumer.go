@@ -30,6 +30,7 @@ func NewKafkaConsumer(brokers []string, groupID, topic string, handler sarama.Co
 	}, nil
 }
 
+
 func (kc *KafkaConsumer) ConsumeMessages() error {
 	ctx := context.Background()
 	for {
