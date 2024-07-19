@@ -10,7 +10,7 @@ import (
 	"messaggio/pkg/util/logger"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type Server interface {
@@ -74,14 +74,14 @@ func (s *server) Run(ctx context.Context) error {
 func (s *server) handlers() {
 	h := request.DefaultHandler()
 
-	s.app.Use(func(ctx *fiber.Ctx) error {
+	s.app.Use(func(ctx fiber.Ctx) error {
 		if ctx.Route().Path == "*" {
 			return h.NoRoute(ctx)
 		}
 		return ctx.Next()
 	})
 
-	s.app.Get("/", func(ctx *fiber.Ctx) error {
+	s.app.Get("/", func(ctx fiber.Ctx) error {
 		return h.Index(ctx)
 	})
 }

@@ -3,9 +3,9 @@ package middleware
 import (
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
 )
 
 type Middleware interface {
@@ -35,7 +35,7 @@ func NewMiddleware(secretKey string) Middleware {
 func (m *middleware) CORS() fiber.Handler {
 	//TODO: Настроить CORS
 	return cors.New(cors.Config{
-		AllowOrigins:     "*",
+		AllowOrigins:     []string{"*"},
 		AllowCredentials: true,
 	})
 }

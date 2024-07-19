@@ -3,7 +3,7 @@ package response
 import (
 	"messaggio/internal/dto"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type Wrapper interface {
@@ -13,10 +13,10 @@ type Wrapper interface {
 }
 
 type wrapper struct {
-	c *fiber.Ctx
+	c fiber.Ctx
 }
 
-func New(c *fiber.Ctx) Wrapper {
+func New(c fiber.Ctx) Wrapper {
 	return &wrapper{c: c}
 }
 

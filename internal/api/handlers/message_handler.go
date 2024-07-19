@@ -7,12 +7,12 @@ import (
 	"messaggio/internal/services"
 	"messaggio/pkg/http/response"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type MessageHandler interface {
-	CreateMessage(c *fiber.Ctx) error
-	GetStatistics(c *fiber.Ctx) error
+	CreateMessage(c fiber.Ctx) error
+	GetStatistics(c fiber.Ctx) error
 }
 
 type messageHandler struct {
@@ -30,12 +30,12 @@ func NewMessageHandler(
 	}
 }
 
-func (mh *messageHandler) CreateMessage(c *fiber.Ctx) error {
+func (mh *messageHandler) CreateMessage(c fiber.Ctx) error {
 	response := response.New(c)
 
 	var req dto.CreateMessageReq
 
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return response.Error(400, err)
 	}
 
@@ -56,7 +56,7 @@ func (mh *messageHandler) CreateMessage(c *fiber.Ctx) error {
 	})
 }
 
-func (mh *messageHandler) GetStatistics(c *fiber.Ctx) error {
+func (mh *messageHandler) GetStatistics(c fiber.Ctx) error {
 	response := response.New(c)
 
 	stats, err := mh.messageService.GetStatistics(context.Background())
