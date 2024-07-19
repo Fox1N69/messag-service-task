@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/recover"
 )
 
 type Server interface {
@@ -26,8 +27,13 @@ type server struct {
 
 func NewServer(infra infra.Infra) Server {
 	return &server{
-		infra:      infra,
-		app:        fiber.New(),
+		infra: infra,
+		app: fiber.New(fiber.Config{
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 10 * time.Second,
+			IdleTimeout:  30 * time.Second,
+			Concurrency:  1000000,
+		}),
 		service:    usecase.NewServiceUseCase(infra),
 		middleware: middleware.NewMiddleware(infra.Config().GetString("secret.key")),
 	}
@@ -40,7 +46,7 @@ func (s *server) Run(ctx context.Context) error {
 
 	// Run the server in a goroutine
 	go func() {
-		if err := s.app.Listen(s.infra.Port()); err != nil {
+		if err := s.app.Listen(s.infra.Port(), fiber.ListenConfig{EnablePrefork: true}); err != nil {
 			if err.Error() != "http: Server closed" {
 				logger.GetLogger().Fatalf("Server error: %v", err)
 			}
@@ -73,6 +79,8 @@ func (s *server) Run(ctx context.Context) error {
 
 func (s *server) handlers() {
 	h := request.DefaultHandler()
+
+	s.app.Use(recover.New()) // Включаем middleware для восстановления после паники
 
 	s.app.Use(func(ctx fiber.Ctx) error {
 		if ctx.Route().Path == "*" {

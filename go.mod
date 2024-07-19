@@ -32,7 +32,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.22.0 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
-	github.com/gofiber/utils/v2 v2.0.0-beta.4 // indirect
+	github.com/gofiber/utils/v2 v2.0.0-beta.5 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect

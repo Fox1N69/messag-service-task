@@ -52,6 +52,8 @@ github.com/gofiber/fiber/v3 v3.0.0-beta.3 h1:7Q2I+HsIqnIEEDB+9oe7Gadpakh6ZLhXpTY
 github.com/gofiber/fiber/v3 v3.0.0-beta.3/go.mod h1:kcMur0Dxqk91R7p4vxEpJfDWZ9u5IfvrtQc8Bvv/JmY=
 github.com/gofiber/utils/v2 v2.0.0-beta.4 h1:1gjbVFFwVwUb9arPcqiB6iEjHBwo7cHsyS41NeIW3co=
 github.com/gofiber/utils/v2 v2.0.0-beta.4/go.mod h1:sdRsPU1FXX6YiDGGxd+q2aPJRMzpsxdzCXo9dz+xtOY=
+github.com/gofiber/utils/v2 v2.0.0-beta.5 h1:zbDIU8gVAlZ2Ak9Fk8APlis4S7wUiQFbcvv6UASkm6A=
+github.com/gofiber/utils/v2 v2.0.0-beta.5/go.mod h1:3Kz8Px3jInKFvqxDzDeoSygwEOO+3uyubTmUa6PqY+0=
 github.com/golang-migrate/migrate/v4 v4.17.1 h1:4zQ6iqL6t6AiItphxJctQb3cFqWiSpMnX7wLTPnnYO4=
 github.com/golang-migrate/migrate/v4 v4.17.1/go.mod h1:m8hinFyWBn0SA4QKHuKh175Pm9wjmxj3S2Mia7dbXzM=
 github.com/golang/snappy v0.0.4 h1:yAGX7huGHXlcLOEtBnF4w7FQwA26wojNCwOYAEhLjQM=
