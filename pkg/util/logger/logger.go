@@ -85,7 +85,7 @@ func init() {
 	}
 
 	// Формируем имя файла на основе имени директории
-	logFileName := filepath.Join(dir, "logs", fmt.Sprintf("%s.log", filepath.Base(dir)))
+	logFileName := filepath.Join(dir, "logs", fmt.Sprintf("%s-error.log", filepath.Base(dir)))
 
 	allFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0640)
 	if err != nil {
@@ -95,11 +95,16 @@ func init() {
 	l.SetOutput(io.Discard)
 
 	l.AddHook(&writeHook{
-		Writer:    []io.Writer{allFile, os.Stdout},
-		LogLevels: logrus.AllLevels,
+		Writer:    []io.Writer{allFile},
+		LogLevels: []logrus.Level{logrus.ErrorLevel},
 	})
 
 	l.SetLevel(logrus.DebugLevel)
+
+	l.AddHook(&writeHook{
+		Writer:    []io.Writer{os.Stdout},
+		LogLevels: logrus.AllLevels,
+	})
 
 	e = logrus.NewEntry(l)
 }
