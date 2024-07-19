@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"messaggio/storage/sqlc/database"
+	"os"
 	"time"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -75,6 +76,8 @@ func (s *PSQLClient) Connect(user, password, host, port, dbname string) error {
 func (s *PSQLClient) Close() {
 	if s.DB != nil {
 		s.DB.Close()
-		log.Println("Connection to PostgreSQL closed")
+		if os.Getenv("FIBER_PREFORK_CHILD") == "" {
+			log.Info("Connection to PostgreSQL closed")
+		}
 	}
 }

@@ -23,9 +23,11 @@ type server struct {
 	app        *fiber.App
 	service    usecase.ServiceUseCase
 	middleware middleware.Middleware
+	log        logger.Logger
 }
 
 func NewServer(infra infra.Infra) Server {
+	logger := logger.GetLogger()
 	return &server{
 		infra: infra,
 		app: fiber.New(fiber.Config{
@@ -36,6 +38,7 @@ func NewServer(infra infra.Infra) Server {
 		}),
 		service:    usecase.NewServiceUseCase(infra),
 		middleware: middleware.NewMiddleware(infra.Config().GetString("secret.key")),
+		log:        logger,
 	}
 }
 
@@ -48,7 +51,7 @@ func (s *server) Run(ctx context.Context) error {
 	go func() {
 		if err := s.app.Listen(s.infra.Port(), fiber.ListenConfig{EnablePrefork: true}); err != nil {
 			if err.Error() != "http: Server closed" {
-				logger.GetLogger().Fatalf("Server error: %v", err)
+				s.log.Fatalf("Server error: %v", err)
 			}
 		}
 	}()
@@ -63,16 +66,16 @@ func (s *server) Run(ctx context.Context) error {
 	// Graceful shutdown with a timeout
 	err := s.app.Shutdown()
 	if err != nil {
-		logger.GetLogger().Errorf("Server shutdown error: %v", err)
+		s.log.Errorf("Server shutdown error: %v", err)
 	}
 
 	// Wait for a while to ensure all connections are closed
 	select {
 	case <-shutdownCtx.Done():
-		logger.GetLogger().Info("Server stopped gracefully")
+		s.log.Info("Server stopped gracefully")
 		return nil
 	case <-time.After(5 * time.Second):
-		logger.GetLogger().Error("Server shutdown timed out")
+		s.log.Error("Server shutdown timed out")
 		return nil
 	}
 }
@@ -80,7 +83,7 @@ func (s *server) Run(ctx context.Context) error {
 func (s *server) handlers() {
 	h := request.DefaultHandler()
 
-	s.app.Use(recover.New()) // Включаем middleware для восстановления после паники
+	s.app.Use(recover.New())
 
 	s.app.Use(func(ctx fiber.Ctx) error {
 		if ctx.Route().Path == "*" {
