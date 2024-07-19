@@ -69,13 +69,11 @@ func (pmr *processedMsgRepository) GetProcessedMessage(ctx context.Context) ([]d
 func (pmr *processedMsgRepository) GetMessageStatistics(ctx context.Context) (map[string]int64, error) {
 	stats := make(map[string]int64)
 
-	// Получаем общее количество сообщений
 	totalMessagesResult, err := pmr.queries.GetTotalMessages(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total messages count: %w", err)
 	}
 
-	// Получаем количество обработанных сообщений
 	processedMessagesResult, err := pmr.queries.GetProcessedMessagesCount(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get processed messages count: %w", err)

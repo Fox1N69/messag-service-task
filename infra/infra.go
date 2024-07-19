@@ -5,6 +5,7 @@ import (
 	"errors"
 	"messaggio/infra/k8s"
 	"messaggio/infra/kafka"
+	"messaggio/internal/repository"
 	"messaggio/pkg/util/logger"
 	"messaggio/storage/postgres"
 	"sync"
@@ -132,6 +133,10 @@ func (i *infra) RedisClient() *redis.Client {
 	return rdb
 }
 
+var (
+	psqlClient *postgres.PSQLClient
+)
+
 // PSQLClient returns a PostgreSQL client instance initialized with the configuration settings.
 // It creates a new PostgreSQL client and establishes a connection using provided credentials.
 func (i *infra) PSQLClient() (*postgres.PSQLClient, error) {
@@ -184,7 +189,14 @@ func (i *infra) KafkaConsumer() *kafka.KafkaConsumer {
 		brokers := config.GetStringSlice("bootstrap_servers")
 		groupID := config.GetString("group_id")
 		topic := config.GetString("topic")
-		handler := &kafka.MessageHandler{}
+
+		// Создаем репозитории
+		processedRepo := repository.NewProcessedMsgRepository(psqlClient.Queries)
+		messageRepo := repository.NewMessageRepository(psqlClient.Queries)
+
+		// Передаем репозитории в обработчик сообщений
+		handler := kafka.NewKafkaMessageHandler(processedRepo, messageRepo)
+
 		var err error
 		kafkaConsumer, err = kafka.NewKafkaConsumer(brokers, groupID, topic, handler)
 		if err != nil {

@@ -1,18 +1,20 @@
 package api
 
 import (
+	"context"
 	"messaggio/infra"
 	"messaggio/internal/api/handlers"
 	"messaggio/internal/usecase"
 	"messaggio/pkg/http/middleware"
 	"messaggio/pkg/http/request"
 	"messaggio/pkg/util/logger"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type Server interface {
-	Run()
+	Run(ctx context.Context) error
 }
 
 type server struct {
@@ -36,30 +38,58 @@ func NewServer(infra infra.Infra) Server {
 // enables CORS middleware, registers application handlers, and API routes.
 // It also starts a background service to synchronize algorithm statuses.
 // Finally, it logs the start of algorithm synchronization and listens on the configured port.
-func (c *server) Run() {
-	//TODO: прописать middleware CORS и RPSLimit
-	c.handlers()
-	c.v1()
+// The server will shut down gracefully when the context is done.
+func (s *server) Run(ctx context.Context) error {
+	// Setup middleware and routes
+	s.handlers()
+	s.v1()
 
-	log := logger.GetLogger()
-	log.Info("Start algorithm sync")
+	// Run the server in a goroutine
+	go func() {
+		if err := s.app.Listen(s.infra.Port()); err != nil {
+			if err.Error() != "http: Server closed" {
+				logger.GetLogger().Fatalf("Server error: %v", err)
+			}
+		}
+	}()
 
-	c.app.Listen(c.infra.Port())
+	// Wait for shutdown signal
+	<-ctx.Done()
+
+	// Give the server some time to shutdown gracefully
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Graceful shutdown with a timeout
+	err := s.app.Shutdown()
+	if err != nil {
+		logger.GetLogger().Errorf("Server shutdown error: %v", err)
+	}
+
+	// Wait for a while to ensure all connections are closed
+	select {
+	case <-shutdownCtx.Done():
+		logger.GetLogger().Info("Server stopped gracefully")
+		return nil
+	case <-time.After(5 * time.Second):
+		logger.GetLogger().Error("Server shutdown timed out")
+		return nil
+	}
 }
 
 // handlers sets up custom route handlers for specific routes on the server.
 // It assigns default handlers for handling unknown routes and an index route.
-func (c *server) handlers() {
+func (s *server) handlers() {
 	h := request.DefaultHandler()
 
-	c.app.Use(func(ctx *fiber.Ctx) error {
+	s.app.Use(func(ctx *fiber.Ctx) error {
 		if ctx.Route().Path == "*" {
 			return h.NoRoute(ctx)
 		}
 		return ctx.Next()
 	})
 
-	c.app.Get("/", func(ctx *fiber.Ctx) error {
+	s.app.Get("/", func(ctx *fiber.Ctx) error {
 		return h.Index(ctx)
 	})
 }
@@ -67,15 +97,15 @@ func (c *server) handlers() {
 // v1 configures versioned API endpoints (v1) for client operations.
 // It sets up routes for client management operations such as adding, updating, deleting clients,
 // and updating algorithm statuses associated with clients.
-func (c *server) v1() {
-	messagHandler := handlers.NewMessageHandler(c.service.MessageService(), c.infra.KafkaProducer())
+func (s *server) v1() {
+	messageHandler := handlers.NewMessageHandler(s.service.MessageService(), s.infra.KafkaProducer())
 
-	api := c.app.Group("/api")
+	api := s.app.Group("/api")
 	{
 		message := api.Group("/message")
 		{
-			message.Post("/", messagHandler.CreateMessage)
-			message.Get("/stat", messagHandler.GetStatistics)
+			message.Post("/", messageHandler.CreateMessage)
+			message.Get("/stat", messageHandler.GetStatistics)
 		}
 	}
 }

@@ -11,6 +11,9 @@ import (
 
 type MessageRepository interface {
 	Create(ctx context.Context, content string, statusID int64) (int64, error)
+	GetMessages(ctx context.Context) ([]database.Message, error)
+	MessageByID(ctx context.Context, messageID int64) (database.Message, error)
+	UpdateMessageStatus(ctx context.Context, statusID, id int64) error
 }
 
 type messageRepository struct {
