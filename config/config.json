@@ -20,5 +20,10 @@
     "password": "",
     "db": 0
   },
+  "kafka": {
+    "bootstrap_servers": "localhost:9092",
+    "group_id": "message-service-group",
+    "topic": "messages"
+  },
   "rps_limit": 100
 }
