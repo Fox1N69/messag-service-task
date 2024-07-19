@@ -33,12 +33,6 @@ func NewServer(infra infra.Infra) Server {
 	}
 }
 
-// Run starts the server and initializes necessary middleware and handlers.
-// It sets up rate limiting based on the configured RPS limit,
-// enables CORS middleware, registers application handlers, and API routes.
-// It also starts a background service to synchronize algorithm statuses.
-// Finally, it logs the start of algorithm synchronization and listens on the configured port.
-// The server will shut down gracefully when the context is done.
 func (s *server) Run(ctx context.Context) error {
 	// Setup middleware and routes
 	s.handlers()
@@ -56,7 +50,7 @@ func (s *server) Run(ctx context.Context) error {
 	// Wait for shutdown signal
 	<-ctx.Done()
 
-	// Give the server some time to shutdown gracefully
+	// Graceful shutdown with a timeout
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -77,8 +71,6 @@ func (s *server) Run(ctx context.Context) error {
 	}
 }
 
-// handlers sets up custom route handlers for specific routes on the server.
-// It assigns default handlers for handling unknown routes and an index route.
 func (s *server) handlers() {
 	h := request.DefaultHandler()
 
@@ -94,9 +86,6 @@ func (s *server) handlers() {
 	})
 }
 
-// v1 configures versioned API endpoints (v1) for client operations.
-// It sets up routes for client management operations such as adding, updating, deleting clients,
-// and updating algorithm statuses associated with clients.
 func (s *server) v1() {
 	messageHandler := handlers.NewMessageHandler(s.service.MessageService(), s.infra.KafkaProducer())
 

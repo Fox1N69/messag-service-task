@@ -46,6 +46,14 @@ func main() {
 		}
 	}()
 
+	// Start Kafka consumer
+	kafkaConsumer := i.KafkaConsumer()
+	go func() {
+		if err := kafkaConsumer.ConsumeMessages(); err != nil {
+			log.Fatalf("Kafka consumer error: %v", err)
+		}
+	}()
+
 	// Wait for termination signal
 	<-ctx.Done()
 	log.Info("Shutting down gracefully...")
