@@ -37,6 +37,7 @@ func NewServer(infra infra.Infra) Server {
 // It also starts a background service to synchronize algorithm statuses.
 // Finally, it logs the start of algorithm synchronization and listens on the configured port.
 func (c *server) Run() {
+	//TODO: прописать middleware CORS и RPSLimit
 	c.handlers()
 	c.v1()
 

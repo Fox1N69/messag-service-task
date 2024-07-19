@@ -1,4 +1,4 @@
-package models
+package dto
 
 type CreateMessageReq struct {
 	Content  string `json:"content" validate:"required"`

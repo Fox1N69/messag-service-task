@@ -33,6 +33,7 @@ func NewMiddleware(secretKey string) Middleware {
 // If the incoming request method is OPTIONS, it responds with HTTP status
 // 204 (No Content) and aborts further processing.
 func (m *middleware) CORS() fiber.Handler {
+	//TODO: Настроить CORS
 	return cors.New(cors.Config{
 		AllowOrigins:     "*",
 		AllowCredentials: true,

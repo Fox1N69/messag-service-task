@@ -1,4 +1,4 @@
-package domain
+package dto
 
 // Response represents a generic response structure for API responses.
 type Response struct {

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"context"
-	"messaggio/internal/domain/models"
+	"messaggio/internal/dto"
 	"messaggio/internal/services"
 	"messaggio/pkg/http/response"
 
@@ -26,7 +26,7 @@ func NewMessageHandler(messageService services.MessageService) MessageHandler {
 func (mh *messageHandler) CreateMessage(c *fiber.Ctx) error {
 	response := response.New(c)
 
-	var req models.CreateMessageReq
+	var req dto.CreateMessageReq
 
 	if err := c.BodyParser(&req); err != nil {
 		return response.Error(400, err)
