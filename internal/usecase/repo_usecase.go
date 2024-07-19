@@ -8,6 +8,7 @@ import (
 
 type RepoUseCase interface {
 	MessageRepository() repository.MessageRepository
+	ProcessedMsgRepository() repository.ProcessedMsgRepository
 }
 
 type repoUseCase struct {
@@ -20,14 +21,27 @@ func NewRepoUseCase(infra infra.Infra) RepoUseCase {
 }
 
 var (
-	messageRepositoryOnce sync.Once
-	messageRepository     repository.MessageRepository
+	messageRepoOnce sync.Once
+	messageRepo     repository.MessageRepository
 )
 
 func (rm *repoUseCase) MessageRepository() repository.MessageRepository {
-	messageRepositoryOnce.Do(func() {
-		messageRepository = repository.NewMessageRepository(rm.infra.PSQLClient().Queries)
+	messageRepoOnce.Do(func() {
+		messageRepo = repository.NewMessageRepository(rm.infra.PSQLClient().Queries)
 	})
 
-	return messageRepository
+	return messageRepo
+}
+
+var (
+	processedMsgRepoOnce sync.Once
+	processedMsgRepo     repository.ProcessedMsgRepository
+)
+
+func (rm *repoUseCase) ProcessedMsgRepository() repository.ProcessedMsgRepository {
+	processedMsgRepoOnce.Do(func() {
+		processedMsgRepo = repository.NewProcessedMsgRepository(rm.infra.PSQLClient().Queries)
+	})
+
+	return processedMsgRepo
 }
