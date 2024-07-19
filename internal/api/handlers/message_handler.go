@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"messaggio/infra/kafka"
 	"messaggio/internal/dto"
 	"messaggio/internal/services"
@@ -48,9 +49,12 @@ func (mh *messageHandler) CreateMessage(c fiber.Ctx) error {
 	kafkaMessage := []byte(req.Content)
 	compressedMessage := snappy.Encode(nil, kafkaMessage)
 
-	if err := mh.kafkaProducer.ProduceMessage("messages", compressedMessage); err != nil {
-		return response.Error(502, err)
-	}
+	// Отправка сообщения асинхронно
+	go func() {
+		if err := mh.kafkaProducer.ProduceMessage("messages", compressedMessage); err != nil {
+			log.Printf("Failed to produce message: %v", err)
+		}
+	}()
 
 	return response.WriteMap(201, fiber.Map{
 		"message": "Message create success",

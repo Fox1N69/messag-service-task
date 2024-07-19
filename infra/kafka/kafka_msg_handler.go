@@ -71,7 +71,7 @@ func (h *MessageHandler) handleMessage(message []byte) (int64, error) {
 	}
 
 	// Обновляем статус сообщения на "Processed"
-	err = h.messageRepo.UpdateMessageStatus(context.Background(), 3, messageID) // assuming status ID 3 is "Processed"
+	err = h.messageRepo.UpdateMessageStatus(context.Background(), 3, messageID)
 	if err != nil {
 		return 0, fmt.Errorf("failed to update message status: %w", err)
 	}
@@ -80,7 +80,6 @@ func (h *MessageHandler) handleMessage(message []byte) (int64, error) {
 }
 
 func (h *MessageHandler) findMessageID(content string) (int64, error) {
-	// Оптимизированный поиск сообщения по содержимому
 	message, err := h.messageRepo.MessageByContent(context.Background(), content)
 	if err != nil {
 		return 0, fmt.Errorf("failed to find message by content: %w", err)
