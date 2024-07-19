@@ -35,9 +35,6 @@ func NewMiddleware(secretKey string) Middleware {
 func (m *middleware) CORS() fiber.Handler {
 	return cors.New(cors.Config{
 		AllowOrigins:     "*",
-		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
-		AllowHeaders:     "Origin,Content-Type,Authorization",
-		ExposeHeaders:    "Content-Length",
 		AllowCredentials: true,
 	})
 }

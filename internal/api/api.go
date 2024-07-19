@@ -2,13 +2,13 @@ package api
 
 import (
 	"messaggio/infra"
+	"messaggio/internal/api/handlers"
 	"messaggio/internal/usecase"
 	"messaggio/pkg/http/middleware"
 	"messaggio/pkg/http/request"
 	"messaggio/pkg/util/logger"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/swagger"
 )
 
 type Server interface {
@@ -37,16 +37,13 @@ func NewServer(infra infra.Infra) Server {
 // It also starts a background service to synchronize algorithm statuses.
 // Finally, it logs the start of algorithm synchronization and listens on the configured port.
 func (c *server) Run() {
-	c.app.Use(c.middleware.RPSLimit(c.infra.Config().GetInt("rps_limit")))
-
-	c.app.Use(c.middleware.CORS())
 	c.handlers()
 	c.v1()
 
 	log := logger.GetLogger()
 	log.Info("Start algorithm sync")
 
-	c.app.Listen(":" + c.infra.Port())
+	c.app.Listen(c.infra.Port())
 }
 
 // handlers sets up custom route handlers for specific routes on the server.
@@ -70,5 +67,13 @@ func (c *server) handlers() {
 // It sets up routes for client management operations such as adding, updating, deleting clients,
 // and updating algorithm statuses associated with clients.
 func (c *server) v1() {
-	c.app.Get("/docs/*", swagger.HandlerDefault)
+	messagHandler := handlers.NewMessageHandler(c.service.MessageService())
+
+	api := c.app.Group("/api")
+	{
+		message := api.Group("/message")
+		{
+			message.Post("/", messagHandler.CreateMessage)
+		}
+	}
 }

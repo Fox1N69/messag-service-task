@@ -6,6 +6,7 @@ import (
 )
 
 type MessageService interface {
+	CreateMessage(ctx context.Context, content string, statusID int64) (int64, error)
 }
 
 type messageService struct {

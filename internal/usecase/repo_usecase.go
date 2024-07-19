@@ -38,9 +38,9 @@ var (
 	processedMsgRepo     repository.ProcessedMsgRepository
 )
 
-func (rm *repoUseCase) ProcessedMsgRepository() repository.ProcessedMsgRepository {
+func (ruc *repoUseCase) ProcessedMsgRepository() repository.ProcessedMsgRepository {
 	processedMsgRepoOnce.Do(func() {
-		processedMsgRepo = repository.NewProcessedMsgRepository(rm.infra.PSQLClient().Queries)
+		processedMsgRepo = repository.NewProcessedMsgRepository(ruc.infra.PSQLClient().Queries)
 	})
 
 	return processedMsgRepo

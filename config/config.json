@@ -10,7 +10,7 @@
     "port": "5432",
     "user": "postgres",
     "pass": "8008",
-    "name": "vortex"
+    "name": "messaggio"
   },
   "secret": {
     "key": "sercret"

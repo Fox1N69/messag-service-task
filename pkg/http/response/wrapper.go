@@ -9,6 +9,7 @@ import (
 type Wrapper interface {
 	Write(code int, message string) error
 	Error(code int, err error) error
+	WriteMap(code int, data fiber.Map) error
 }
 
 type wrapper struct {
@@ -32,4 +33,8 @@ func (w *wrapper) Write(code int, message string) error {
 // error message extracted from the error object.
 func (w *wrapper) Error(code int, err error) error {
 	return w.c.Status(code).JSON(domain.Response{Code: code, Message: err.Error()})
+}
+
+func (w *wrapper) WriteMap(code int, data fiber.Map) error {
+	return w.c.Status(code).JSON(data)
 }
