@@ -75,6 +75,7 @@ func (c *server) v1() {
 		message := api.Group("/message")
 		{
 			message.Post("/", messagHandler.CreateMessage)
+			message.Get("/stat", messagHandler.GetStatistics)
 		}
 	}
 }

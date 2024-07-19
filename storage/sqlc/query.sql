@@ -18,6 +18,9 @@ SELECT id,
 FROM messages
 WHERE id = $1;
 
+-- name: GetTotalMessages :one
+SELECT COUNT(*) AS count FROM messages;
+
 -- name: UpdateMessageStatus :exec
 UPDATE messages
 SET status_id = $1
@@ -43,3 +46,8 @@ SELECT pm.id,
   m.content
 FROM processed_messages pm
   JOIN messages m ON pm.message_id = m.id;
+
+
+
+-- name: GetProcessedMessagesCount :one
+SELECT COUNT(*) AS count FROM processed_messages;

@@ -12,6 +12,7 @@ import (
 
 type MessageHandler interface {
 	CreateMessage(c *fiber.Ctx) error
+	GetStatistics(c *fiber.Ctx) error
 }
 
 type messageHandler struct {
@@ -52,5 +53,18 @@ func (mh *messageHandler) CreateMessage(c *fiber.Ctx) error {
 	return response.WriteMap(201, fiber.Map{
 		"message": "Message create success",
 		"id":      id,
+	})
+}
+
+func (mh *messageHandler) GetStatistics(c *fiber.Ctx) error {
+	response := response.New(c)
+
+	stats, err := mh.messageService.GetStatistics(context.Background())
+	if err != nil {
+		return response.Error(500, err)
+	}
+
+	return response.WriteMap(200, fiber.Map{
+		"statistics": stats,
 	})
 }

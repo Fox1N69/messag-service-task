@@ -115,6 +115,28 @@ func (q *Queries) GetProcessedMessages(ctx context.Context) ([]GetProcessedMessa
 	return items, nil
 }
 
+const getProcessedMessagesCount = `-- name: GetProcessedMessagesCount :one
+SELECT COUNT(*) AS count FROM processed_messages
+`
+
+func (q *Queries) GetProcessedMessagesCount(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, getProcessedMessagesCount)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getTotalMessages = `-- name: GetTotalMessages :one
+SELECT COUNT(*) AS count FROM messages
+`
+
+func (q *Queries) GetTotalMessages(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, getTotalMessages)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const insertMessage = `-- name: InsertMessage :one
 INSERT INTO messages (content, status_id)
 VALUES ($1, $2)

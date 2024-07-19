@@ -45,10 +45,6 @@ func (s *PSQLClient) Connect(user, password, host, port, dbname string) error {
 		return fmt.Errorf("%s: failed to parse DSN: %w", op, err)
 	}
 
-	config.MaxConns = 100
-	config.MinConns = 50
-	config.MaxConnLifetime = time.Hour
-
 	db, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		return fmt.Errorf("%s: failed to create connection pool: %w", op, err)
@@ -64,6 +60,11 @@ func (s *PSQLClient) Connect(user, password, host, port, dbname string) error {
 
 	s.DB = db
 	s.Queries = database.New(db)
+	if s.Queries == nil {
+		db.Close()
+		return fmt.Errorf("%s: failed to initialize Queries", op)
+	}
+
 	return nil
 }
 

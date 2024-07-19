@@ -21,7 +21,7 @@ type Infra interface {
 	SetMode() string
 	Port() string
 	RedisClient() *redis.Client
-	PSQLClient() *postgres.PSQLClient
+	PSQLClient() (*postgres.PSQLClient, error)
 	KubernetesDeployer() k8s.KubernetesDeployer
 	KafkaProducer() *kafka.KafkaProducer
 	KafkaConsumer() *kafka.KafkaConsumer
@@ -134,7 +134,7 @@ func (i *infra) RedisClient() *redis.Client {
 
 // PSQLClient returns a PostgreSQL client instance initialized with the configuration settings.
 // It creates a new PostgreSQL client and establishes a connection using provided credentials.
-func (i *infra) PSQLClient() *postgres.PSQLClient {
+func (i *infra) PSQLClient() (*postgres.PSQLClient, error) {
 	config := i.Config().Sub("database")
 	user := config.GetString("user")
 	pass := config.GetString("pass")
@@ -143,9 +143,12 @@ func (i *infra) PSQLClient() *postgres.PSQLClient {
 	name := config.GetString("name")
 
 	psqlClient := postgres.NewPSQLClient()
-	psqlClient.Connect(user, pass, host, port, name)
+	err := psqlClient.Connect(user, pass, host, port, name)
+	if err != nil {
+		return nil, err
+	}
 
-	return psqlClient
+	return psqlClient, nil
 }
 
 // KubernetesDeployer returns a new instance of KubernetesDeployer.
