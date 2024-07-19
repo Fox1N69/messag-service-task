@@ -3,7 +3,6 @@ package infra
 import (
 	"context"
 	"errors"
-	"messaggio/infra/k8s"
 	"messaggio/infra/kafka"
 	"messaggio/internal/repository"
 	"messaggio/pkg/util/logger"
@@ -23,7 +22,6 @@ type Infra interface {
 	Port() string
 	RedisClient() *redis.Client
 	PSQLClient() (*postgres.PSQLClient, error)
-	KubernetesDeployer() k8s.KubernetesDeployer
 	KafkaProducer() *kafka.KafkaProducer
 	KafkaConsumer() *kafka.KafkaConsumer
 }
@@ -154,12 +152,6 @@ func (i *infra) PSQLClient() (*postgres.PSQLClient, error) {
 	}
 
 	return psqlClient, nil
-}
-
-// KubernetesDeployer returns a new instance of KubernetesDeployer.
-// It initializes a Kubernetes deployer used for managing deployments.
-func (i *infra) KubernetesDeployer() k8s.KubernetesDeployer {
-	return k8s.NewKubernetesDeployer()
 }
 
 var (
