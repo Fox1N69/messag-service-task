@@ -59,7 +59,7 @@ func (mh *messageHandler) CreateMessage(c fiber.Ctx) error {
 func (mh *messageHandler) GetStatistics(c fiber.Ctx) error {
 	response := response.New(c)
 
-	stats, err := mh.messageService.GetStatistics(context.Background())
+	stats, err := mh.messageService.GetMessageStatistics(context.Background())
 	if err != nil {
 		return response.Error(500, err)
 	}

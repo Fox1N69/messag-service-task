@@ -12,27 +12,23 @@ type MessageService interface {
 	GetMessages(ctx context.Context) ([]database.Message, error)
 	GetMessageByID(ctx context.Context, messageID int64) (database.Message, error)
 	UpdateMessageStatus(ctx context.Context, statusID, id int64) error
-	CreateProcessed(
+	UpdateMessageProcessingDetails(
 		ctx context.Context,
-		messageID int64,
-		kafkaTopic string,
-		kafkaPartition int32,
-		kafkaOffset int64,
-	) (int64, error)
+		id int64,
+		topic string,
+		partition int32,
+		offset int64,
+	) error
+	GetMessageStatistics(ctx context.Context) (map[string]int64, error)
 }
 
 type messageService struct {
-	repo          repository.MessageRepository
-	processedRepo repository.ProcessedMsgRepository
+	repo repository.MessageRepository
 }
 
-func NewMessageService(
-	messageRepository repository.MessageRepository,
-	processedRepository repository.ProcessedMsgRepository,
-) MessageService {
+func NewMessageService(messageRepository repository.MessageRepository) MessageService {
 	return &messageService{
-		repo:          messageRepository,
-		processedRepo: processedRepository,
+		repo: messageRepository,
 	}
 }
 
@@ -41,7 +37,17 @@ func (ms *messageService) CreateMessage(ctx context.Context, content string, sta
 }
 
 func (ms *messageService) GetStatistics(ctx context.Context) (map[string]int64, error) {
-	return ms.processedRepo.GetMessageStatistics(ctx)
+	// Получаем количество обработанных сообщений
+	count, err := ms.repo.GetProcessedMessagesCount(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Возвращаем статистику в виде карты
+	stats := map[string]int64{
+		"processed_messages": count,
+	}
+	return stats, nil
 }
 
 func (ms *messageService) GetMessages(ctx context.Context) ([]database.Message, error) {
@@ -56,12 +62,16 @@ func (ms *messageService) UpdateMessageStatus(ctx context.Context, statusID, id 
 	return ms.repo.UpdateMessageStatus(ctx, statusID, id)
 }
 
-func (ms *messageService) CreateProcessed(
+func (ms *messageService) UpdateMessageProcessingDetails(
 	ctx context.Context,
-	messageID int64,
-	kafkaTopic string,
-	kafkaPartition int32,
-	kafkaOffset int64,
-) (int64, error) {
-	return ms.processedRepo.Create(ctx, messageID, kafkaTopic, kafkaPartition, kafkaOffset)
+	id int64,
+	topic string,
+	partition int32,
+	offset int64,
+) error {
+	return ms.repo.UpdateMessageProcessingDetails(ctx, id, topic, partition, offset)
+}
+
+func (ms *messageService) GetMessageStatistics(ctx context.Context) (map[string]int64, error) {
+	return ms.repo.GetMessageStatistics(ctx)
 }

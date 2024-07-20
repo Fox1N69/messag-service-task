@@ -7,14 +7,22 @@ RETURNING id;
 SELECT id,
   content,
   created_at,
-  status_id
+  status_id,
+  processed,
+  kafka_topic,
+  kafka_partition,
+  kafka_offset
 FROM messages;
 
 -- name: GetMessageByID :one
 SELECT id,
   content,
   created_at,
-  status_id
+  status_id,
+  processed,
+  kafka_topic,
+  kafka_partition,
+  kafka_offset
 FROM messages
 WHERE id = $1;
 
@@ -26,28 +34,35 @@ UPDATE messages
 SET status_id = $1
 WHERE id = $2;
 
--- name: InsertProcessedMessage :one
-INSERT INTO processed_messages (
-    message_id,
-    kafka_topic,
-    kafka_partition,
-    kafka_offset
-  )
-VALUES ($1, $2, $3, $4)
-RETURNING id;
-
 -- name: GetProcessedMessages :many
-SELECT pm.id,
-  pm.message_id,
-  pm.processed_at,
-  pm.kafka_topic,
-  pm.kafka_partition,
-  pm.kafka_offset,
-  m.content
-FROM processed_messages pm
-  JOIN messages m ON pm.message_id = m.id;
-
-
+SELECT id,
+  content,
+  created_at,
+  status_id,
+  processed,
+  kafka_topic,
+  kafka_partition,
+  kafka_offset
+FROM messages
+WHERE processed = TRUE;
 
 -- name: GetProcessedMessagesCount :one
-SELECT COUNT(*) AS count FROM processed_messages;
+SELECT COUNT(*) AS count
+FROM messages
+WHERE processed = TRUE;
+
+-- name: UpdateMessageProcessingDetails :exec
+UPDATE messages
+SET processed = TRUE,
+    kafka_topic = $2,
+    kafka_partition = $3,
+    kafka_offset = $4
+WHERE id = $1;
+
+
+-- name: GetMessageStatistics :one
+SELECT
+  COUNT(CASE WHEN processed = TRUE THEN 1 END) AS processed_count,
+  COUNT(CASE WHEN processed = FALSE AND status_id = 1 THEN 1 END) AS received_count, -- assuming status ID 1 is "Received"
+  COUNT(CASE WHEN processed = FALSE AND status_id = 2 THEN 1 END) AS processing_count  -- assuming status ID 2 is "Processing"
+FROM messages;

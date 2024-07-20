@@ -195,11 +195,10 @@ func (i *infra) KafkaConsumer() *kafka.KafkaConsumer {
 		topic := config.GetString("topic")
 
 		// Создаем репозитории
-		processedRepo := repository.NewProcessedMsgRepository(i.psqlClient.Queries)
 		messageRepo := repository.NewMessageRepository(i.psqlClient.Queries)
 
 		// Передаем репозитории в обработчик сообщений
-		handler := kafka.NewKafkaMessageHandler(processedRepo, messageRepo)
+		handler := kafka.NewKafkaMessageHandler(messageRepo)
 
 		var err error
 		kafkaConsumer, err = kafka.NewKafkaConsumer(brokers, groupID, topic, handler)

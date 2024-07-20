@@ -31,8 +31,7 @@ var (
 func (suc *serviceUseCase) MessageService() services.MessageService {
 	messageServiceOnce.Do(func() {
 		repo := suc.repo.MessageRepository()
-		processedRepo := suc.repo.ProcessedMsgRepository()
-		messageService = services.NewMessageService(repo, processedRepo)
+		messageService = services.NewMessageService(repo)
 	})
 
 	return messageService

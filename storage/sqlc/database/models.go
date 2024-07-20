@@ -9,22 +9,17 @@ import (
 )
 
 type Message struct {
-	ID        int64
-	Content   string
-	CreatedAt pgtype.Timestamptz
-	StatusID  pgtype.Int8
+	ID             int64
+	Content        string
+	CreatedAt      pgtype.Timestamptz
+	StatusID       pgtype.Int8
+	Processed      pgtype.Bool
+	KafkaTopic     pgtype.Text
+	KafkaPartition pgtype.Int4
+	KafkaOffset    pgtype.Int8
 }
 
 type MessageStatus struct {
 	ID     int64
 	Status string
-}
-
-type ProcessedMessage struct {
-	ID             int64
-	MessageID      pgtype.Int8
-	ProcessedAt    pgtype.Timestamptz
-	KafkaTopic     pgtype.Text
-	KafkaPartition pgtype.Int4
-	KafkaOffset    pgtype.Int8
 }

@@ -7,10 +7,10 @@
   },
   "database": {
     "host": "localhost",
-    "port": "5436",
+    "port": "5432",
     "user": "postgres",
     "pass": "8008",
-    "name": "tt"
+    "name": "messaggio"
   },
   "secret": {
     "key": "sercret"

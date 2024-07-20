@@ -9,7 +9,6 @@ import (
 
 type RepoUseCase interface {
 	MessageRepository() repository.MessageRepository
-	ProcessedMsgRepository() repository.ProcessedMsgRepository
 }
 
 type repoUseCase struct {
@@ -41,20 +40,3 @@ func (rm *repoUseCase) MessageRepository() repository.MessageRepository {
 	return messageRepo
 }
 
-var (
-	processedMsgRepoOnce sync.Once
-	processedMsgRepo     repository.ProcessedMsgRepository
-)
-
-func (ruc *repoUseCase) ProcessedMsgRepository() repository.ProcessedMsgRepository {
-	processedMsgRepoOnce.Do(func() {
-		psqlClient, err := ruc.infra.PSQLClient()
-		if err != nil {
-			ruc.log.Errorf("failed to create PSQL client: %v", err)
-			return
-		}
-		processedMsgRepo = repository.NewProcessedMsgRepository(psqlClient.Queries)
-	})
-
-	return processedMsgRepo
-}

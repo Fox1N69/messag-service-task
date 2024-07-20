@@ -15,7 +15,11 @@ const getMessageByID = `-- name: GetMessageByID :one
 SELECT id,
   content,
   created_at,
-  status_id
+  status_id,
+  processed,
+  kafka_topic,
+  kafka_partition,
+  kafka_offset
 FROM messages
 WHERE id = $1
 `
@@ -28,7 +32,32 @@ func (q *Queries) GetMessageByID(ctx context.Context, id int64) (Message, error)
 		&i.Content,
 		&i.CreatedAt,
 		&i.StatusID,
+		&i.Processed,
+		&i.KafkaTopic,
+		&i.KafkaPartition,
+		&i.KafkaOffset,
 	)
+	return i, err
+}
+
+const getMessageStatistics = `-- name: GetMessageStatistics :one
+SELECT
+  COUNT(CASE WHEN processed = TRUE THEN 1 END) AS processed_count,
+  COUNT(CASE WHEN processed = FALSE AND status_id = 1 THEN 1 END) AS received_count, -- assuming status ID 1 is "Received"
+  COUNT(CASE WHEN processed = FALSE AND status_id = 2 THEN 1 END) AS processing_count  -- assuming status ID 2 is "Processing"
+FROM messages
+`
+
+type GetMessageStatisticsRow struct {
+	ProcessedCount  int64
+	ReceivedCount   int64
+	ProcessingCount int64
+}
+
+func (q *Queries) GetMessageStatistics(ctx context.Context) (GetMessageStatisticsRow, error) {
+	row := q.db.QueryRow(ctx, getMessageStatistics)
+	var i GetMessageStatisticsRow
+	err := row.Scan(&i.ProcessedCount, &i.ReceivedCount, &i.ProcessingCount)
 	return i, err
 }
 
@@ -36,7 +65,11 @@ const getMessages = `-- name: GetMessages :many
 SELECT id,
   content,
   created_at,
-  status_id
+  status_id,
+  processed,
+  kafka_topic,
+  kafka_partition,
+  kafka_offset
 FROM messages
 `
 
@@ -54,6 +87,10 @@ func (q *Queries) GetMessages(ctx context.Context) ([]Message, error) {
 			&i.Content,
 			&i.CreatedAt,
 			&i.StatusID,
+			&i.Processed,
+			&i.KafkaTopic,
+			&i.KafkaPartition,
+			&i.KafkaOffset,
 		); err != nil {
 			return nil, err
 		}
@@ -66,44 +103,36 @@ func (q *Queries) GetMessages(ctx context.Context) ([]Message, error) {
 }
 
 const getProcessedMessages = `-- name: GetProcessedMessages :many
-SELECT pm.id,
-  pm.message_id,
-  pm.processed_at,
-  pm.kafka_topic,
-  pm.kafka_partition,
-  pm.kafka_offset,
-  m.content
-FROM processed_messages pm
-  JOIN messages m ON pm.message_id = m.id
+SELECT id,
+  content,
+  created_at,
+  status_id,
+  processed,
+  kafka_topic,
+  kafka_partition,
+  kafka_offset
+FROM messages
+WHERE processed = TRUE
 `
 
-type GetProcessedMessagesRow struct {
-	ID             int64
-	MessageID      pgtype.Int8
-	ProcessedAt    pgtype.Timestamptz
-	KafkaTopic     pgtype.Text
-	KafkaPartition pgtype.Int4
-	KafkaOffset    pgtype.Int8
-	Content        string
-}
-
-func (q *Queries) GetProcessedMessages(ctx context.Context) ([]GetProcessedMessagesRow, error) {
+func (q *Queries) GetProcessedMessages(ctx context.Context) ([]Message, error) {
 	rows, err := q.db.Query(ctx, getProcessedMessages)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetProcessedMessagesRow
+	var items []Message
 	for rows.Next() {
-		var i GetProcessedMessagesRow
+		var i Message
 		if err := rows.Scan(
 			&i.ID,
-			&i.MessageID,
-			&i.ProcessedAt,
+			&i.Content,
+			&i.CreatedAt,
+			&i.StatusID,
+			&i.Processed,
 			&i.KafkaTopic,
 			&i.KafkaPartition,
 			&i.KafkaOffset,
-			&i.Content,
 		); err != nil {
 			return nil, err
 		}
@@ -116,7 +145,9 @@ func (q *Queries) GetProcessedMessages(ctx context.Context) ([]GetProcessedMessa
 }
 
 const getProcessedMessagesCount = `-- name: GetProcessedMessagesCount :one
-SELECT COUNT(*) AS count FROM processed_messages
+SELECT COUNT(*) AS count
+FROM messages
+WHERE processed = TRUE
 `
 
 func (q *Queries) GetProcessedMessagesCount(ctx context.Context) (int64, error) {
@@ -155,34 +186,30 @@ func (q *Queries) InsertMessage(ctx context.Context, arg InsertMessageParams) (i
 	return id, err
 }
 
-const insertProcessedMessage = `-- name: InsertProcessedMessage :one
-INSERT INTO processed_messages (
-    message_id,
-    kafka_topic,
-    kafka_partition,
-    kafka_offset
-  )
-VALUES ($1, $2, $3, $4)
-RETURNING id
+const updateMessageProcessingDetails = `-- name: UpdateMessageProcessingDetails :exec
+UPDATE messages
+SET processed = TRUE,
+    kafka_topic = $2,
+    kafka_partition = $3,
+    kafka_offset = $4
+WHERE id = $1
 `
 
-type InsertProcessedMessageParams struct {
-	MessageID      pgtype.Int8
+type UpdateMessageProcessingDetailsParams struct {
+	ID             int64
 	KafkaTopic     pgtype.Text
 	KafkaPartition pgtype.Int4
 	KafkaOffset    pgtype.Int8
 }
 
-func (q *Queries) InsertProcessedMessage(ctx context.Context, arg InsertProcessedMessageParams) (int64, error) {
-	row := q.db.QueryRow(ctx, insertProcessedMessage,
-		arg.MessageID,
+func (q *Queries) UpdateMessageProcessingDetails(ctx context.Context, arg UpdateMessageProcessingDetailsParams) error {
+	_, err := q.db.Exec(ctx, updateMessageProcessingDetails,
+		arg.ID,
 		arg.KafkaTopic,
 		arg.KafkaPartition,
 		arg.KafkaOffset,
 	)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
+	return err
 }
 
 const updateMessageStatus = `-- name: UpdateMessageStatus :exec
