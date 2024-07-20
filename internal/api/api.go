@@ -27,8 +27,6 @@ type server struct {
 }
 
 func NewServer(infra infra.Infra) Server {
-	logger := logger.GetLogger()
-
 	return &server{
 		infra: infra,
 		app: fiber.New(fiber.Config{
@@ -39,7 +37,7 @@ func NewServer(infra infra.Infra) Server {
 		}),
 		service:    usecase.NewServiceUseCase(infra),
 		middleware: middleware.NewMiddleware(infra.Config().GetString("secret.key")),
-		log:        logger,
+		log:        logger.GetLogger(),
 	}
 }
 

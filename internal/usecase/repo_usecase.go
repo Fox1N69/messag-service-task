@@ -19,8 +19,10 @@ type repoUseCase struct {
 
 // NewRepoUseCase creates a new instance of RepoUseCase using the provided infrastructure.
 func NewRepoUseCase(infra infra.Infra) RepoUseCase {
-	logger := logger.GetLogger()
-	return &repoUseCase{infra: infra, log: logger}
+	return &repoUseCase{
+		infra: infra,
+		log:   logger.GetLogger(),
+	}
 }
 
 var (

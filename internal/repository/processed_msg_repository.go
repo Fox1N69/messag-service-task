@@ -27,11 +27,9 @@ type processedMsgRepository struct {
 }
 
 func NewProcessedMsgRepository(sqlcQueries *database.Queries) ProcessedMsgRepository {
-	logger := logger.GetLogger()
-
 	return &processedMsgRepository{
 		queries: sqlcQueries,
-		log:     logger,
+		log:     logger.GetLogger(),
 	}
 }
 

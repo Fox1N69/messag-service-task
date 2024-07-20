@@ -23,11 +23,9 @@ type messageRepository struct {
 }
 
 func NewMessageRepository(sqlcQueires *database.Queries) MessageRepository {
-	logger := logger.GetLogger()
-
 	return &messageRepository{
 		queries: sqlcQueires,
-		log:     logger,
+		log:     logger.GetLogger(),
 	}
 }
 
@@ -41,10 +39,13 @@ func (mr *messageRepository) Create(ctx context.Context, content string, statusI
 		return 0, fmt.Errorf("faile to insert message: %w", err)
 	}
 
+	mr.log.Debugf("Message created with ID: %d", id)
 	return id, nil
 }
 
 func (mr *messageRepository) GetMessages(ctx context.Context) ([]database.Message, error) {
+	mr.log.Debug("Get all messages")
+
 	messages, err := mr.queries.GetMessages(ctx)
 	if err != nil {
 		mr.log.Errorf("failed to get messages: %v", err)
@@ -55,6 +56,8 @@ func (mr *messageRepository) GetMessages(ctx context.Context) ([]database.Messag
 }
 
 func (mr *messageRepository) MessageByID(ctx context.Context, messageID int64) (database.Message, error) {
+	mr.log.Debugf("getting message by ID: %d", messageID)
+
 	message, err := mr.queries.GetMessageByID(ctx, messageID)
 	if err != nil {
 		mr.log.Errorf("failed to get message by id: %v", err)
@@ -73,10 +76,13 @@ func (mr *messageRepository) UpdateMessageStatus(ctx context.Context, statusID, 
 		return fmt.Errorf("failed to update message status: %w", err)
 	}
 
+	mr.log.Debug("message status update success")
 	return nil
 }
 
 func (mr *messageRepository) MessageByContent(ctx context.Context, content string) (database.Message, error) {
+	mr.log.Debugf("getting message by content: %s", content)
+
 	message, err := mr.queries.GetMessageByContent(ctx, content)
 	if err != nil {
 		return database.Message{}, fmt.Errorf("failed to get message by content: %w", err)
