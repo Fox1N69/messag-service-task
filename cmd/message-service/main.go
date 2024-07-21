@@ -4,6 +4,7 @@ import (
 	"context"
 	"messaggio/infra"
 	"messaggio/internal/api"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -40,8 +41,6 @@ func main() {
 			log.Fatalf("API server error: %v", err)
 		}
 	}()
-
-	
 
 	// Wait for termination signal
 	<-ctx.Done()

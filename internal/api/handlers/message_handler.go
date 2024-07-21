@@ -8,6 +8,7 @@ import (
 	"messaggio/pkg/http/response"
 
 	"github.com/gofiber/fiber/v3"
+	jsoniter "github.com/json-iterator/go"
 )
 
 type MessageHandler interface {
@@ -30,12 +31,14 @@ func NewMessageHandler(
 	}
 }
 
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
+
 func (mh *messageHandler) CreateMessage(c fiber.Ctx) error {
 	response := response.New(c)
 
 	var req dto.CreateMessageReq
 
-	if err := c.Bind().Body(&req); err != nil {
+	if err := json.Unmarshal(c.Body(), &req); err != nil {
 		return response.Error(400, err)
 	}
 
@@ -44,11 +47,10 @@ func (mh *messageHandler) CreateMessage(c fiber.Ctx) error {
 		return response.Error(501, err)
 	}
 
-	kafkaMessage := []byte(req.Content)
-
-	if err := mh.kafkaProducer.ProduceMessage("messages", kafkaMessage); err != nil {
-		return response.Error(502, err)
-	}
+	go func() {
+		kafkaMessage := []byte(req.Content)
+		mh.kafkaProducer.ProduceMessage("messages", kafkaMessage)
+	}()
 
 	return response.WriteMap(201, fiber.Map{
 		"message": "Message create success",

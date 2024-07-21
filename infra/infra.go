@@ -9,6 +9,7 @@ import (
 	"messaggio/storage/postgres"
 	"sync"
 
+	"github.com/IBM/sarama"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
@@ -170,11 +171,21 @@ var (
 func (i *infra) KafkaProducer() *kafka.KafkaProducer {
 	kafkaProducerOnce.Do(func() {
 		brokers := i.Config().Sub("kafka").GetStringSlice("bootstrap_servers")
-		var err error
-		kafkaProducer, err = kafka.NewKafkaProducer(brokers)
+
+		// Создаем конфигурацию для продюсера Kafka
+		config := sarama.NewConfig()
+		config.Producer.RequiredAcks = sarama.WaitForAll
+		config.Producer.Retry.Max = 5
+		config.Producer.Return.Successes = true
+
+		// Создаем новый продюсер Kafka
+		producer, err := sarama.NewSyncProducer(brokers, config)
 		if err != nil {
 			logrus.Fatalf("[infra][KafkaProducer] %v", err)
 		}
+
+		// Создаем новый KafkaProducer с использованием созданного синхронного продюсера
+		kafkaProducer = kafka.NewKafkaProducer(producer)
 	})
 
 	return kafkaProducer

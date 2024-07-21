@@ -41,13 +41,14 @@ func (h *MessageHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sa
 			h.log.Errorf("Error updating message status: %v", err)
 		}
 
-		if err = h.messageRepo.UpdateMessageProcessingDetails(
+		err = h.messageRepo.UpdateMessageProcessingDetails(
 			context.Background(),
 			messageID,
 			msg.Topic,
 			msg.Partition,
 			msg.Offset,
-		); err != nil {
+		)
+		if err != nil {
 			h.log.Errorf("Error recording message details: %v", err)
 		}
 

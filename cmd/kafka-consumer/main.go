@@ -24,6 +24,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
 	}
+
 	// Создание репозитория для сообщений
 	messageRepo := repository.NewMessageRepository(psql.Queries)
 

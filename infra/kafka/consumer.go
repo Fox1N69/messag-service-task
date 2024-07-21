@@ -30,13 +30,18 @@ func NewKafkaConsumer(brokers []string, groupID, topic string, handler sarama.Co
 	}, nil
 }
 
-
 func (kc *KafkaConsumer) ConsumeMessages() error {
 	ctx := context.Background()
 	for {
-		if err := kc.consumer.Consume(ctx, []string{kc.topic}, kc.handler); err != nil {
-			log.Printf("Error consuming messages: %v", err)
-			return err
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			err := kc.consumer.Consume(ctx, []string{kc.topic}, kc.handler)
+			if err != nil {
+				log.Printf("Error consuming messages: %v", err)
+				return err
+			}
 		}
 	}
 }

@@ -3,40 +3,31 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"messaggio/storage/sqlc/database"
 	"os"
 	"time"
 
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"messaggio/storage/sqlc/database"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sirupsen/logrus"
 )
 
 var log = logrus.New()
 
+// PSQLClient represents the PostgreSQL client with a connection pool and queries.
 type PSQLClient struct {
 	DB      *pgxpool.Pool
 	Queries *database.Queries
 }
 
+// NewPSQLClient creates a new PSQLClient instance with the provided configuration.
 func NewPSQLClient() *PSQLClient {
 	return &PSQLClient{}
 }
 
 // Connect establishes a connection to the PostgreSQL database using the provided credentials.
-//
 // It sets up connection pooling with maximum open and idle connections,
 // and sets the maximum lifetime of connections.
-//
-// Parameters:
-// - user: PostgreSQL username.
-// - password: Password for the PostgreSQL user.
-// - host: PostgreSQL server host address.
-// - port: PostgreSQL server port.
-// - dbname: Name of the PostgreSQL database to connect to.
-//
-// Returns an error if the connection cannot be established or if there is an issue
-// with setting up the connection pool or pinging the database.
 func (s *PSQLClient) Connect(user, password, host, port, dbname string) error {
 	const op = "storage.postgres.Connect()"
 
@@ -45,6 +36,12 @@ func (s *PSQLClient) Connect(user, password, host, port, dbname string) error {
 	if err != nil {
 		return fmt.Errorf("%s: failed to parse DSN: %w", op, err)
 	}
+
+	// Set connection pool configuration
+	config.MaxConns = 20                      // Maximum number of connections in the pool
+	config.MinConns = 5                       // Minimum number of connections in the pool
+	config.MaxConnLifetime = 30 * time.Minute // Maximum lifetime of a connection
+	config.MaxConnIdleTime = 10 * time.Minute // Maximum idle time of a connection
 
 	db, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
@@ -70,7 +67,6 @@ func (s *PSQLClient) Connect(user, password, host, port, dbname string) error {
 }
 
 // Close closes the connection to the PostgreSQL database.
-//
 // It checks if there is an active database connection (s.DB) and attempts to close it.
 // Logs an error message if there was an issue closing the connection.
 func (s *PSQLClient) Close() {
