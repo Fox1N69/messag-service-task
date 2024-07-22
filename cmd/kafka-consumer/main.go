@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"messaggio/infra"
@@ -37,7 +38,7 @@ func main() {
 
 	// Канал для завершения работы и канал для сигналов
 	stopChan := make(chan os.Signal, 1)
-	signal.Notify(stopChan, os.Interrupt, os.Kill)
+	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
 
 	// Создание контекста для управления завершением работы
 	ctx, cancel := context.WithCancel(context.Background())
