@@ -15,6 +15,14 @@ services:
       - ./config/postgresql.conf:/etc/postgresql/postgresql.conf
     command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"] 
 
+  migrate-up:
+    image: migrate/migrate
+    command: ["-path=/migrations", "-database=postgres://postgres:8008@postgres:5433/messaggio?sslmode=disable", "up"]
+    volumes:
+      - ./migrations:/migrations
+    depends_on:
+      - postgres 
+
   redis:
     image: redis:latest
     container_name: redis
