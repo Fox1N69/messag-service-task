@@ -10,6 +10,7 @@ test:
 build-algosync:
 	go build -o bin/server cmd/algosync-service/main.go
 
+
 docker-image:
 	docker build -t server:v1 .
 
