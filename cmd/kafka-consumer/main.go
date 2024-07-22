@@ -20,18 +20,15 @@ func main() {
 	groupID := "example-group"
 	topic := "messages"
 
+	// Подключение к базе данных
 	psql, err := i.PSQLClient()
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
 	}
 
-	// Создание репозитория для сообщений
 	messageRepo := repository.NewMessageRepository(psql.Queries)
-
-	// Создание обработчика сообщений
 	handler := kafka.NewKafkaMessageHandler(messageRepo)
 
-	// Создание потребителя Kafka
 	consumer, err := kafka.NewKafkaConsumer(brokers, groupID, topic, handler)
 	if err != nil {
 		log.Fatalf("Failed to create Kafka consumer: %v", err)

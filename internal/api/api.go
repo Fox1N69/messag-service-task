@@ -26,6 +26,17 @@ type server struct {
 	log        logger.Logger
 }
 
+// NewServer creates a new instance of the server with the given infrastructure configuration.
+//
+// This function initializes the server with the provided infrastructure, sets up
+// the Fiber application with default configuration, and prepares middleware and
+// service use cases required for handling HTTP requests.
+//
+// Parameters:
+//   - infra: An instance of infra.Infra that provides configuration and dependencies
+//
+// Returns:
+//   - Server: A new instance of a Server interface, which is implemented by the server struct
 func NewServer(infra infra.Infra) Server {
 	logger := logger.GetLogger()
 
@@ -43,10 +54,32 @@ func NewServer(infra infra.Infra) Server {
 	}
 }
 
+// Run starts the HTTP server and listens for incoming requests.
+//
+// It sets up the necessary middleware, routes, and handlers for the server.
+// The server is started in a separate goroutine to allow the main goroutine
+// to handle other tasks, such as waiting for a shutdown signal.
+//
+// When the context is canceled, indicating a shutdown request, the method
+// performs a graceful shutdown of the server. It attempts to shut down the
+// server gracefully by waiting up to 5 seconds for active connections to
+// close. If the shutdown does not complete within the timeout period, the
+// method logs an error and returns.
+//
+// The method returns an error if there is an issue with starting the server
+// or if the server fails to shut down gracefully.
+//
+// Parameters:
+//   - ctx: The context used to signal when the server should stop
+//
+// Returns:
+//   - error: An error value indicating if an error occurred during server
+//     startup or shutdown
 func (s *server) Run(ctx context.Context) error {
 	// Setup middleware and routes
+	s.middlewares()
 	s.handlers()
-	s.v1()
+	s.routes()
 
 	// Run the server in a goroutine
 	go func() {
@@ -57,10 +90,8 @@ func (s *server) Run(ctx context.Context) error {
 		}
 	}()
 
-	// Wait for shutdown signal
 	<-ctx.Done()
 
-	// Graceful shutdown with a timeout
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -70,7 +101,6 @@ func (s *server) Run(ctx context.Context) error {
 		s.log.Errorf("Server shutdown error: %v", err)
 	}
 
-	// Wait for a while to ensure all connections are closed
 	select {
 	case <-shutdownCtx.Done():
 		s.log.Info("Server stopped gracefully")
@@ -81,10 +111,29 @@ func (s *server) Run(ctx context.Context) error {
 	}
 }
 
+// middlewares sets up the middleware for the server.
+//
+// It adds middleware components to the Fiber application, including recovery
+// middleware for recovering from panics and rate limiting middleware for
+// controlling request rates.
+//
+// This method is called during server startup to ensure that the middleware
+// is properly configured before handling any requests.
+func (s *server) middlewares() {
+	s.app.Use(recover.New())
+	s.app.Use(s.middleware.RPSLimit(10000))
+}
+
+// handlers sets up the request handlers for the server.
+//
+// It configures routes and assigns handlers to various endpoints. This includes
+// setting up a default handler for routes that are not matched by other handlers
+// and a handler for the root path.
+//
+// This method is called during server startup to ensure that all request handlers
+// are correctly registered and ready to process incoming requests.
 func (s *server) handlers() {
 	h := request.DefaultHandler()
-
-	s.app.Use(recover.New())
 
 	s.app.Use(func(ctx fiber.Ctx) error {
 		if ctx.Route().Path == "*" {
@@ -93,12 +142,24 @@ func (s *server) handlers() {
 		return ctx.Next()
 	})
 
-	s.app.Get("/", func(ctx fiber.Ctx) error {
-		return h.Index(ctx)
-	})
+	s.app.Get("/", h.Index)
 }
 
-func (s *server) v1() {
+// routes sets up the API routes for the server.
+//
+// This method configures the routes for the API version 1 by creating route groups
+// and assigning handlers to the endpoints. It sets up a route group under the `/api`
+// path and further organizes the `/message` routes. Specifically, it registers
+// handlers for creating messages and retrieving message statistics.
+//
+// It uses the `messageHandler` created with the message service and Kafka producer
+// to handle requests for the `/message` endpoints. This method ensures that all
+// routes related to message operations are correctly configured and ready to
+// process incoming API requests.
+//
+// This method is called during server startup to set up the routing for the
+// application.
+func (s *server) routes() {
 	messageHandler := handlers.NewMessageHandler(s.service.MessageService(), s.infra.KafkaProducer())
 
 	api := s.app.Group("/api")

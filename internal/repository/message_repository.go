@@ -40,6 +40,10 @@ func NewMessageRepository(sqlcQueries *database.Queries) MessageRepository {
 	}
 }
 
+// Create inserts a new message into the database.
+// It takes a context, the message content, and the status ID as parameters.
+// On success, it returns the ID of the newly created message.
+// On failure, it returns an error indicating the reason for the failure.
 func (mr *messageRepository) Create(ctx context.Context, content string, statusID int64) (int64, error) {
 	id, err := mr.queries.InsertMessage(ctx, database.InsertMessageParams{
 		Content:  content,
@@ -53,6 +57,8 @@ func (mr *messageRepository) Create(ctx context.Context, content string, statusI
 	return id, nil
 }
 
+// GetMessages retrieves all messages from the database.
+// It returns a slice of messages and an error if the retrieval fails.
 func (mr *messageRepository) GetMessages(ctx context.Context) ([]database.Message, error) {
 	messages, err := mr.queries.GetMessages(ctx)
 	if err != nil {
@@ -63,6 +69,8 @@ func (mr *messageRepository) GetMessages(ctx context.Context) ([]database.Messag
 	return messages, nil
 }
 
+// MessageByID retrieves a single message by its ID from the database.
+// It returns the message and an error if the retrieval fails.
 func (mr *messageRepository) MessageByID(ctx context.Context, messageID int64) (database.Message, error) {
 	message, err := mr.queries.GetMessageByID(ctx, messageID)
 	if err != nil {
@@ -73,6 +81,9 @@ func (mr *messageRepository) MessageByID(ctx context.Context, messageID int64) (
 	return message, nil
 }
 
+// UpdateMessageStatus updates the status of a message identified by its ID.
+// It takes a context, the new status ID, and the message ID as parameters.
+// It returns an error if the update fails.
 func (mr *messageRepository) UpdateMessageStatus(ctx context.Context, statusID, id int64) error {
 	if err := mr.queries.UpdateMessageStatus(ctx, database.UpdateMessageStatusParams{
 		ID:       id,
@@ -85,6 +96,8 @@ func (mr *messageRepository) UpdateMessageStatus(ctx context.Context, statusID, 
 	return nil
 }
 
+// GetProcessedMessages retrieves all processed messages from the database.
+// It returns a slice of messages and an error if the retrieval fails.
 func (mr *messageRepository) GetProcessedMessages(ctx context.Context) ([]database.Message, error) {
 	messages, err := mr.queries.GetProcessedMessages(ctx)
 	if err != nil {
@@ -95,6 +108,8 @@ func (mr *messageRepository) GetProcessedMessages(ctx context.Context) ([]databa
 	return messages, nil
 }
 
+// GetMessageStatistics retrieves statistics about messages from the database.
+// It returns a map containing counts of processed, received, and processing messages, and an error if the retrieval fails.
 func (mr *messageRepository) GetMessageStatistics(ctx context.Context) (map[string]int64, error) {
 	stats, err := mr.queries.GetMessageStatistics(ctx)
 	if err != nil {
@@ -109,6 +124,8 @@ func (mr *messageRepository) GetMessageStatistics(ctx context.Context) (map[stri
 	}, nil
 }
 
+// GetProcessedMessagesCount retrieves the count of processed messages from the database.
+// It returns the count and an error if the retrieval fails.
 func (mr *messageRepository) GetProcessedMessagesCount(ctx context.Context) (int64, error) {
 	count, err := mr.queries.GetProcessedMessagesCount(ctx)
 	if err != nil {
@@ -119,6 +136,9 @@ func (mr *messageRepository) GetProcessedMessagesCount(ctx context.Context) (int
 	return count, nil
 }
 
+// UpdateMessageProcessingDetails updates the processing details of a message identified by its ID.
+// It takes a context, message ID, Kafka topic, partition, and offset as parameters.
+// It returns an error if the update fails.
 func (mr *messageRepository) UpdateMessageProcessingDetails(
 	ctx context.Context,
 	id int64,

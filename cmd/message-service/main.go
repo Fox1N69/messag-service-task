@@ -15,11 +15,9 @@ func main() {
 	i := infra.New("config/config.json")
 	// Set project mode
 	i.SetMode()
-
 	// Get custom logrus logger
 	log := i.GetLogger()
 
-	// Log only in master process
 	if os.Getenv("FIBER_PREFORK_CHILD") == "" {
 		// Connect to database and migration
 		psqlClient, err := i.PSQLClient()
@@ -30,7 +28,6 @@ func main() {
 		log.Info("Connected to PSQLClient")
 	}
 
-	// Setup signal handling
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -42,7 +39,6 @@ func main() {
 		}
 	}()
 
-	// Wait for termination signal
 	<-ctx.Done()
 
 	if os.Getenv("FIBER_PREFORK_CHILD") == "" {

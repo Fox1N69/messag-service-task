@@ -27,11 +27,20 @@ type Infra interface {
 	KafkaConsumer() *kafka.KafkaConsumer
 }
 
+// infra is an implementation of the Infra interface.
+// It provides access to configuration, logging, and various infrastructure clients.
 type infra struct {
 	configFile string
 	psqlClient *postgres.PSQLClient
 }
 
+// New creates a new instance of infra with the specified configuration file path.
+// It initializes the PostgreSQL client and handles any initialization errors.
+//
+// configFile - The path to the configuration file.
+//
+// Returns:
+// Infra - A new instance of infra.
 func New(configFile string) Infra {
 	i := &infra{configFile: configFile}
 	var err error
@@ -48,7 +57,10 @@ var (
 )
 
 // Config returns the Viper configuration instance.
-// It reads and initializes configuration from the specified configFile path.
+// It initializes and reads the configuration from the specified configFile path.
+//
+// Returns:
+// *viper.Viper - The Viper configuration instance.
 func (i *infra) Config() *viper.Viper {
 	vprOnce.Do(func() {
 		viper.SetConfigFile(i.configFile)
@@ -63,6 +75,9 @@ func (i *infra) Config() *viper.Viper {
 }
 
 // GetLogger returns the application-wide logger instance.
+//
+// Returns:
+// logger.Logger - The application-wide logger instance.
 func (i *infra) GetLogger() logger.Logger {
 	log := logger.GetLogger()
 	return log
@@ -76,7 +91,10 @@ var (
 )
 
 // SetMode sets the application mode based on the environment configuration.
-// It retrieves the mode from the environment settings and configures Gin framework accordingly.
+// It retrieves the mode from the environment settings and configures the Gin framework accordingly.
+//
+// Returns:
+// string - The current mode of the Gin framework.
 func (i *infra) SetMode() string {
 	modeOnce.Do(func() {
 		env := i.Config().Sub("environment").GetString("mode")
@@ -101,6 +119,9 @@ var (
 
 // Port retrieves the server port from the configuration.
 // It initializes the port once and returns it prefixed with ':'.
+//
+// Returns:
+// string - The server port, prefixed with ':'.
 func (i *infra) Port() string {
 	portOnce.Do(func() {
 		port = i.Config().Sub("server").GetString("port")
@@ -116,6 +137,10 @@ var (
 
 // RedisClient returns a Redis client instance configured based on the environment settings.
 // It initializes the Redis client once using the configured address, password, and database.
+// It also verifies the connection by pinging the Redis server.
+//
+// Returns:
+// *redis.Client - The Redis client instance.
 func (i *infra) RedisClient() *redis.Client {
 	rdbOnce.Do(func() {
 		config := i.Config().Sub("redis")
@@ -141,6 +166,10 @@ func (i *infra) RedisClient() *redis.Client {
 
 // PSQLClient returns a PostgreSQL client instance initialized with the configuration settings.
 // It creates a new PostgreSQL client and establishes a connection using provided credentials.
+//
+// Returns:
+// *postgres.PSQLClient - The PostgreSQL client instance.
+// error - An error if there was an issue creating the PostgreSQL client or connecting to the database.
 func (i *infra) PSQLClient() (*postgres.PSQLClient, error) {
 	if i.psqlClient == nil {
 		config := i.Config().Sub("database")
@@ -168,29 +197,38 @@ var (
 	kafkaConsumer     *kafka.KafkaConsumer
 )
 
+// KafkaProducer returns a Kafka producer instance configured based on the environment settings.
+// It initializes the Kafka producer once using the configured bootstrap servers and settings.
+//
+// Returns:
+// *kafka.KafkaProducer - The Kafka producer instance.
 func (i *infra) KafkaProducer() *kafka.KafkaProducer {
 	kafkaProducerOnce.Do(func() {
 		brokers := i.Config().Sub("kafka").GetStringSlice("bootstrap_servers")
 
-		// Создаем конфигурацию для продюсера Kafka
 		config := sarama.NewConfig()
 		config.Producer.RequiredAcks = sarama.WaitForAll
 		config.Producer.Retry.Max = 5
 		config.Producer.Return.Successes = true
 
-		// Создаем новый продюсер Kafka
 		producer, err := sarama.NewSyncProducer(brokers, config)
 		if err != nil {
 			logrus.Fatalf("[infra][KafkaProducer] %v", err)
 		}
 
-		// Создаем новый KafkaProducer с использованием созданного синхронного продюсера
 		kafkaProducer = kafka.NewKafkaProducer(producer)
 	})
 
 	return kafkaProducer
 }
 
+// KafkaConsumer returns a Kafka consumer instance configured based on the environment settings.
+// It initializes the Kafka consumer once using the configured bootstrap servers, group ID, and topic.
+// It also initializes a message repository and message handler for processing messages.
+//
+// Returns:
+// *kafka.KafkaConsumer - The Kafka consumer instance.
+// error - An error if there was an issue creating the Kafka consumer or initializing the message repository.
 func (i *infra) KafkaConsumer() *kafka.KafkaConsumer {
 	kafkaConsumerOnce.Do(func() {
 		if i.psqlClient == nil {
@@ -205,10 +243,8 @@ func (i *infra) KafkaConsumer() *kafka.KafkaConsumer {
 		groupID := config.GetString("group_id")
 		topic := config.GetString("topic")
 
-		// Создаем репозитории
 		messageRepo := repository.NewMessageRepository(i.psqlClient.Queries)
 
-		// Передаем репозитории в обработчик сообщений
 		handler := kafka.NewKafkaMessageHandler(messageRepo)
 
 		var err error

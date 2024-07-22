@@ -7,26 +7,35 @@ import (
 	"github.com/IBM/sarama"
 )
 
+// KafkaProducer represents a producer for sending messages to Kafka.
+// It manages the Kafka producer, a channel for messages, and synchronization for message processing.
 type KafkaProducer struct {
 	producer       sarama.SyncProducer
 	messageChannel chan *sarama.ProducerMessage
 	waitGroup      sync.WaitGroup
 }
 
-// NewKafkaProducer создает новый KafkaProducer с заданным синхронным продюсером.
+// NewKafkaProducer creates a new KafkaProducer instance with the provided
+// synchronous producer. It also starts a goroutine for processing messages.
+//
+// producer - A synchronous Sarama producer for sending messages to Kafka.
+//
+// Returns:
+// *KafkaProducer - A pointer to the newly created KafkaProducer instance.
 func NewKafkaProducer(producer sarama.SyncProducer) *KafkaProducer {
 	kp := &KafkaProducer{
 		producer:       producer,
-		messageChannel: make(chan *sarama.ProducerMessage, 100), // Буферизующий канал с размером 100
+		messageChannel: make(chan *sarama.ProducerMessage, 100),
 	}
 
-	// Запускаем горутину для обработки сообщений
 	go kp.startProducing()
 
 	return kp
 }
 
-// startProducing обрабатывает сообщения из канала и отправляет их в Kafka.
+// startProducing processes messages from the channel and sends them to Kafka.
+// This method runs in a separate goroutine and is initiated when a KafkaProducer
+// is created.
 func (kp *KafkaProducer) startProducing() {
 	for msg := range kp.messageChannel {
 		_, _, err := kp.producer.SendMessage(msg)
@@ -39,7 +48,10 @@ func (kp *KafkaProducer) startProducing() {
 	}
 }
 
-// ProduceMessage отправляет сообщение в канал для последующей асинхронной отправки в Kafka.
+// ProduceMessage sends a message to the channel for asynchronous delivery to Kafka.
+//
+// topic - The name of the Kafka topic to which the message will be sent.
+// message - The message data as a byte slice.
 func (kp *KafkaProducer) ProduceMessage(topic string, message []byte) {
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
@@ -50,7 +62,8 @@ func (kp *KafkaProducer) ProduceMessage(topic string, message []byte) {
 	kp.messageChannel <- msg
 }
 
-// Close закрывает продюсер и ожидает завершения обработки всех сообщений в канале.
+// Close shuts down the producer and waits for all messages in the channel to be processed.
+// Errors during producer shutdown are logged.
 func (kp *KafkaProducer) Close() {
 	close(kp.messageChannel)
 	kp.waitGroup.Wait()

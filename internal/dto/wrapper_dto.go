@@ -6,6 +6,7 @@ type Response struct {
 	Message string `json:"message"`
 }
 
+// SeccessResponse represents a generic response structure for API success reponses without code.
 type SuccessResponse struct {
 	Message string `json:"message"`
 }
