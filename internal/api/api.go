@@ -11,19 +11,25 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 )
 
+type IPBlockConfig struct {
+	RateLimitWindow time.Duration
+	MaxRequests     int
+}
 type Server interface {
 	Run(ctx context.Context) error
 }
 
 type server struct {
-	infra      infra.Infra
-	app        *fiber.App
-	service    usecase.ServiceUseCase
-	middleware middleware.Middleware
-	log        logger.Logger
+	infra         infra.Infra
+	app           *fiber.App
+	service       usecase.ServiceUseCase
+	middleware    middleware.Middleware
+	log           logger.Logger
+	ipBlockConfig IPBlockConfig
 }
 
 // NewServer creates a new instance of the server with the given infrastructure configuration.
@@ -40,6 +46,11 @@ type server struct {
 func NewServer(infra infra.Infra) Server {
 	logger := logger.GetLogger()
 
+	ipBlockConfig := IPBlockConfig{
+		MaxRequests:     infra.Config().Sub("ip_block_config").GetInt("max_requests"),
+		RateLimitWindow: time.Duration(infra.Config().Sub("ip_block_config").GetInt("rate_limit_window_seconds")) * time.Second,
+	}
+
 	return &server{
 		infra: infra,
 		app: fiber.New(fiber.Config{
@@ -48,9 +59,10 @@ func NewServer(infra infra.Infra) Server {
 			IdleTimeout:  30 * time.Second,
 			Concurrency:  1000000,
 		}),
-		service:    usecase.NewServiceUseCase(infra),
-		middleware: middleware.NewMiddleware(infra.Config().GetString("secret.key")),
-		log:        logger,
+		service:       usecase.NewServiceUseCase(infra),
+		middleware:    middleware.NewMiddleware(infra.Config().GetString("secret.key")),
+		log:           logger,
+		ipBlockConfig: ipBlockConfig,
 	}
 }
 
@@ -120,8 +132,9 @@ func (s *server) Run(ctx context.Context) error {
 // This method is called during server startup to ensure that the middleware
 // is properly configured before handling any requests.
 func (s *server) middlewares() {
+	s.app.Use(s.middleware.IPBlock(s.infra.RedisClient(), middleware.IPBlockConfig(s.ipBlockConfig)))
 	s.app.Use(recover.New())
-	s.app.Use(s.middleware.RPSLimit(10000))
+	s.app.Use(limiter.New(limiter.Config{}))
 }
 
 // handlers sets up the request handlers for the server.

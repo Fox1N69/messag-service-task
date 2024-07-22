@@ -69,10 +69,8 @@ func (h *MessageHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sa
 			continue
 		}
 
-		// Отправляем обновление статуса в канал
-		statusUpdater.UpdateStatus(messageID, 2) // Статус "в процессе"
+		statusUpdater.UpdateStatus(messageID, 2)
 
-		// Записываем детали обработки сообщения
 		err = h.messageRepo.UpdateMessageProcessingDetails(
 			context.Background(),
 			messageID,
@@ -84,11 +82,9 @@ func (h *MessageHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sa
 			h.log.Errorf("Error recording message details: %v", err)
 		}
 
-		// Отмечаем сообщение как обработанное в Kafka
 		sess.MarkMessage(msg, "")
 
-		// После успешной обработки, обновляем статус на "обработано"
-		statusUpdater.UpdateStatus(messageID, 3) // Статус "обработано"
+		statusUpdater.UpdateStatus(messageID, 3)
 	}
 
 	return nil

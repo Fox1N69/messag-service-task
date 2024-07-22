@@ -1,8 +1,11 @@
 package middleware
 
 import (
+	"context"
+	"messaggio/pkg/util/logger"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
@@ -10,15 +13,25 @@ import (
 
 type Middleware interface {
 	CORS() fiber.Handler
-	RPSLimit(rps int) fiber.Handler
+	RateLimit(rps int) fiber.Handler
+	IPBlock(redisClient *redis.Client, config IPBlockConfig) fiber.Handler
 }
 
 type middleware struct {
 	secretKey string
+	log       logger.Logger
+}
+
+type IPBlockConfig struct {
+	RateLimitWindow time.Duration
+	MaxRequests     int
 }
 
 func NewMiddleware(secretKey string) Middleware {
-	return &middleware{secretKey: secretKey}
+	return &middleware{
+		secretKey: secretKey,
+		log:       logger.GetLogger(),
+	}
 }
 
 // CORS returns a middleware handler that adds CORS headers to the response.
@@ -44,9 +57,58 @@ func (m *middleware) CORS() fiber.Handler {
 //
 // It uses a rate limiter initialized with the provided RPS value. For each request,
 // it logs the time elapsed since the previous request using the rate limiter.
-func (m *middleware) RPSLimit(rps int) fiber.Handler {
+func (m *middleware) RateLimit(rps int) fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        rps,
-		Expiration: 60 * time.Second,
+		Expiration: 1 * time.Minute,
+		KeyGenerator: func(c fiber.Ctx) string {
+			return c.IP()
+		},
 	})
+}
+
+func (m *middleware) IPBlock(redisClient *redis.Client, config IPBlockConfig) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		ip := c.IP()
+		key := "rate_limit:" + ip
+		blockedKey := "blocked_ips"
+		blockedTTL := 10 * time.Minute
+
+		count, err := redisClient.Incr(context.Background(), key).Result()
+		if err != nil {
+			m.log.Errorf("error icrementing Redis key: %v", err)
+			return c.SendStatus(501)
+		}
+
+		if count == 1 {
+			redisClient.Expire(context.Background(), key, config.RateLimitWindow)
+		}
+
+		if count > int64(config.MaxRequests) {
+			_, err := redisClient.SAdd(context.Background(), blockedKey, ip).Result()
+			if err != nil {
+				m.log.Errorf("error add IP to block list: %v", err)
+				return c.SendStatus(501)
+			}
+
+			_, err = redisClient.Expire(context.Background(), blockedKey, blockedTTL).Result()
+			if err != nil {
+				m.log.Errorf("error setting expiration for blocked IP list: %v", err)
+				return c.SendStatus(501)
+			}
+
+			return c.Status(429).SendString("Rate limit exceeded")
+		}
+
+		isBlock, err := redisClient.SIsMember(context.Background(), blockedKey, ip).Result()
+		if err != nil {
+			m.log.Errorf("error check if IP is block: %v", err)
+			return c.SendStatus(501)
+		}
+		if isBlock {
+			return c.Status(fiber.StatusForbidden).SendString("Access denied")
+		}
+
+		return c.Next()
+	}
 }

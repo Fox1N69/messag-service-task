@@ -25,5 +25,8 @@
     "group_id": "message-service-group",
     "topic": "messages"
   },
-  "rps_limit": 100
+  "ip_block_config": {
+    "max_requests": 100,
+    "rate_limit_window_seconds": 60
+  }
 }
