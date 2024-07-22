@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,21 +10,28 @@ import (
 	"messaggio/infra"
 	"messaggio/infra/kafka"
 	"messaggio/internal/repository"
+	"messaggio/pkg/util/logger"
 )
 
 func main() {
 	i := infra.New("config/config.json")
+	mode := i.SetMode()
+	logger.Init(mode)
+	log := i.GetLogger().WithField("op", "consumer.client")
 
 	// Конфигурация подключения
-	brokers := []string{"localhost:9092"}
-	groupID := "example-group"
-	topic := "messages"
+	kafkaConfig := i.Config().Sub("kafka")
+
+	brokers := []string{"kafka:9092"}
+	groupID := kafkaConfig.GetString("group_id")
+	topic := kafkaConfig.GetString("topic")
 
 	// Подключение к базе данных
 	psql, err := i.PSQLClient()
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
 	}
+	log.Info("Client connet to database")
 
 	messageRepo := repository.NewMessageRepository(psql.Queries)
 	handler := kafka.NewKafkaMessageHandler(messageRepo)
@@ -35,6 +41,7 @@ func main() {
 		log.Fatalf("Failed to create Kafka consumer: %v", err)
 	}
 	defer consumer.Close()
+	log.Info("Create Kafka consumer")
 
 	// Канал для завершения работы и канал для сигналов
 	stopChan := make(chan os.Signal, 1)
@@ -48,7 +55,7 @@ func main() {
 	go func() {
 		if err := consumer.ConsumeMessages(); err != nil {
 			log.Printf("Error consuming messages: %v", err)
-			cancel() // Завершение работы при ошибке
+			cancel()
 		}
 	}()
 

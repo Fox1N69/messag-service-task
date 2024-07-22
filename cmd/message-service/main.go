@@ -4,6 +4,7 @@ import (
 	"context"
 	"messaggio/infra"
 	"messaggio/internal/api"
+	"messaggio/pkg/util/logger"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
@@ -14,8 +15,9 @@ func main() {
 	// Init config
 	i := infra.New("config/config.json")
 	// Set project mode
-	i.SetMode()
+	mode := i.SetMode()
 	// Get custom logrus logger
+	logger.Init(mode)
 	log := i.GetLogger()
 
 	if os.Getenv("FIBER_PREFORK_CHILD") == "" {

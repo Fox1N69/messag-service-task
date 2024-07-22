@@ -60,7 +60,7 @@ func (hook *writeHook) Levels() []logrus.Level {
 // exist, opens or creates the "logs/all.log" file for logging, and configures log levels.
 //
 // Panics if there is an error while creating the "logs" directory or opening the log file.
-func init() {
+func Init(mode string) {
 	l := logrus.New()
 	l.SetReportCaller(true)
 
@@ -94,16 +94,30 @@ func init() {
 
 	l.SetOutput(io.Discard)
 
+	switch mode {
+	case "dev":
+		l.SetLevel(logrus.DebugLevel)
+		l.AddHook(&writeHook{
+			Writer:    []io.Writer{os.Stdout},
+			LogLevels: logrus.AllLevels,
+		})
+	case "release":
+		l.SetLevel(logrus.ErrorLevel)
+		l.AddHook(&writeHook{
+			Writer:    []io.Writer{os.Stderr},
+			LogLevels: []logrus.Level{logrus.ErrorLevel},
+		})
+	default:
+		l.SetLevel(logrus.InfoLevel)
+		l.AddHook(&writeHook{
+			Writer:    []io.Writer{os.Stdout},
+			LogLevels: logrus.AllLevels,
+		})
+	}
+
 	l.AddHook(&writeHook{
 		Writer:    []io.Writer{allFile},
 		LogLevels: []logrus.Level{logrus.ErrorLevel},
-	})
-
-	l.SetLevel(logrus.DebugLevel)
-
-	l.AddHook(&writeHook{
-		Writer:    []io.Writer{os.Stdout},
-		LogLevels: logrus.AllLevels,
 	})
 
 	e = logrus.NewEntry(l)

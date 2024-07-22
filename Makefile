@@ -1,15 +1,20 @@
 dep:
 	go mod tidy
 
-run-algosync:
-	go run cmd/algosync-service/main.go
+run-message-service:
+	go run cmd/message-service/main.go
 
 test:
 	go test -short -cover ./...
 
-build-algosync:
-	go build -o bin/server cmd/algosync-service/main.go
+build-message:
+	go build -o bin/server cmd/message-service/main.go
 
+run-client:
+	go run cmd/client/main.go
+
+build-client:
+	go build -o bin/client cmd/client/main.go
 
 docker-image:
 	docker build -t server:v1 .
