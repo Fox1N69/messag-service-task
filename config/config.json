@@ -26,7 +26,8 @@
     "topic": "messages"
   },
   "ip_block_config": {
-    "max_requests": 100,
-    "rate_limit_window_seconds": 60
+    "enable": false,
+    "max_requests": 1000,
+    "rate_limit_window_seconds": 120
   }
 }

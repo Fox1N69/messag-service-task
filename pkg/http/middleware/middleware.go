@@ -23,6 +23,7 @@ type middleware struct {
 }
 
 type IPBlockConfig struct {
+	Enable          bool
 	RateLimitWindow time.Duration
 	MaxRequests     int
 }
@@ -68,6 +69,12 @@ func (m *middleware) RateLimit(rps int) fiber.Handler {
 }
 
 func (m *middleware) IPBlock(redisClient *redis.Client, config IPBlockConfig) fiber.Handler {
+	if !config.Enable {
+		return func(c fiber.Ctx) error {
+			return c.Next()
+		}
+	}
+
 	return func(c fiber.Ctx) error {
 		ip := c.IP()
 		key := "rate_limit:" + ip

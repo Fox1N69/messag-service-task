@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/recover"
 )
 
 type IPBlockConfig struct {
+	Enable          bool
 	RateLimitWindow time.Duration
 	MaxRequests     int
 }
@@ -45,10 +45,12 @@ type server struct {
 //   - Server: A new instance of a Server interface, which is implemented by the server struct
 func NewServer(infra infra.Infra) Server {
 	logger := logger.GetLogger()
+	infraBlockConfig := infra.Config().Sub("ip_block_config")
 
 	ipBlockConfig := IPBlockConfig{
-		MaxRequests:     infra.Config().Sub("ip_block_config").GetInt("max_requests"),
-		RateLimitWindow: time.Duration(infra.Config().Sub("ip_block_config").GetInt("rate_limit_window_seconds")) * time.Second,
+		Enable:          infraBlockConfig.GetBool("enable"),
+		MaxRequests:     infraBlockConfig.GetInt("max_requests"),
+		RateLimitWindow: time.Duration(infraBlockConfig.GetInt("rate_limit_window_seconds")) * time.Second,
 	}
 
 	return &server{
@@ -57,7 +59,7 @@ func NewServer(infra infra.Infra) Server {
 			ReadTimeout:  10 * time.Second,
 			WriteTimeout: 10 * time.Second,
 			IdleTimeout:  30 * time.Second,
-			Concurrency:  1000000,
+			Concurrency:  10000,
 		}),
 		service:       usecase.NewServiceUseCase(infra),
 		middleware:    middleware.NewMiddleware(infra.Config().GetString("secret.key")),
@@ -132,9 +134,11 @@ func (s *server) Run(ctx context.Context) error {
 // This method is called during server startup to ensure that the middleware
 // is properly configured before handling any requests.
 func (s *server) middlewares() {
-	s.app.Use(s.middleware.IPBlock(s.infra.RedisClient(), middleware.IPBlockConfig(s.ipBlockConfig)))
+	if s.ipBlockConfig.Enable {
+		s.app.Use(s.middleware.IPBlock(s.infra.RedisClient(), middleware.IPBlockConfig(s.ipBlockConfig)))
+	}
+
 	s.app.Use(recover.New())
-	s.app.Use(limiter.New(limiter.Config{}))
 }
 
 // handlers sets up the request handlers for the server.
