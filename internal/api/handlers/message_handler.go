@@ -57,7 +57,7 @@ func (mh *messageHandler) CreateMessage(c fiber.Ctx) error {
 		return response.Error(400, err)
 	}
 
-	id, err := mh.messageService.CreateMessage(context.Background(), req.Content, req.StatusID)
+	err := mh.messageService.CreateMessage(context.Background(), req.Content, req.StatusID)
 	if err != nil {
 		return response.Error(501, err)
 	}
@@ -67,10 +67,7 @@ func (mh *messageHandler) CreateMessage(c fiber.Ctx) error {
 		mh.kafkaProducer.ProduceMessage("messages", kafkaMessage)
 	}()
 
-	return response.WriteMap(201, fiber.Map{
-		"message": "Message create success",
-		"id":      id,
-	})
+	return response.Write(201, "message create success")
 }
 
 // GetStatistics godoc

@@ -10,7 +10,7 @@ import (
 )
 
 type MessageRepository interface {
-	Create(ctx context.Context, content string, statusID int64) (int64, error)
+	Create(ctx context.Context, content string, statusID int64) error
 	GetMessages(ctx context.Context) ([]database.Message, error)
 	MessageByID(ctx context.Context, messageID int64) (database.Message, error)
 	UpdateMessageStatus(ctx context.Context, statusID, id int64) error
@@ -44,17 +44,17 @@ func NewMessageRepository(sqlcQueries *database.Queries) MessageRepository {
 // It takes a context, the message content, and the status ID as parameters.
 // On success, it returns the ID of the newly created message.
 // On failure, it returns an error indicating the reason for the failure.
-func (mr *messageRepository) Create(ctx context.Context, content string, statusID int64) (int64, error) {
-	id, err := mr.queries.InsertMessage(ctx, database.InsertMessageParams{
+func (mr *messageRepository) Create(ctx context.Context, content string, statusID int64) error {
+	err := mr.queries.InsertMessage(ctx, database.InsertMessageParams{
 		Content:  content,
 		StatusID: pgtype.Int8{Int64: statusID, Valid: true},
 	})
 	if err != nil {
 		mr.log.Errorf("failed to insert message: %v", err)
-		return 0, fmt.Errorf("failed to insert message: %w", err)
+		return fmt.Errorf("failed to insert message: %w", err)
 	}
 
-	return id, nil
+	return nil
 }
 
 // GetMessages retrieves all messages from the database.
