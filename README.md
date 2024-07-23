@@ -89,7 +89,7 @@ SQLC - библиотека для генерации кода на go из sqlc
 ## Результаты тестирования нагрузки
 Тестирование проводилось локально на **mac mini m1**
 
-**Скрипт теста ***
+**Скрипт теста** 
  ```console
 hey -n 100000 -c 100 -m POST -d '{"message":"text", "status_id": 1}' -H "Content-Type: application/json" http://localhost:4000/api/message/
 
