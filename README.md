@@ -62,6 +62,13 @@ Request
     "content": "message content"
   }
 ```
+Response 
+```json
+  {
+    "code": 201,
+    "message": "message create success"
+  }
+```
 
 
 ## Используемые библиотеки
