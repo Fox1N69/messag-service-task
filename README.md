@@ -56,6 +56,7 @@ make build-algosync
 # API ручки
 **CreateMessage()**
 Method: POST
+
 Request
 ```json
   {
@@ -72,7 +73,8 @@ Response
 
 **GetStatistic()**
 Method: GET
-response
+
+Response
 ```json
 
   {
