@@ -85,3 +85,47 @@ SQLC - библиотека для генерации кода на go из sqlc
 ### Защита от SQL иньекций
 Что бы защитить свой сервис от sql иньекций, я использую заготовленый sql запросы.
 И не использую денамические sql запросы.
+
+## Benchmark
+Summary:
+  Total:        5.6101 secs
+  Slowest:      0.0404 secs
+  Fastest:      0.0003 secs
+  Average:      0.0056 secs
+  Requests/sec: 17824.9432
+
+  Total data:   4900000 bytes
+  Size/request: 49 bytes
+
+Response time histogram:
+  0.000 [1]     |
+  0.004 [12796] |■■■■■■
+  0.008 [82458] |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+  0.012 [3725]  |■■
+  0.016 [628]   |
+  0.020 [226]   |
+  0.024 [69]    |
+  0.028 [29]    |
+  0.032 [14]    |
+  0.036 [25]    |
+  0.040 [29]    |
+
+
+Latency distribution:
+  10% in 0.0043 secs
+  25% in 0.0046 secs
+  50% in 0.0054 secs
+  75% in 0.0060 secs
+  90% in 0.0067 secs
+  95% in 0.0082 secs
+  99% in 0.0126 secs
+
+Details (average, fastest, slowest):
+  DNS+dialup:   0.0000 secs, 0.0003 secs, 0.0404 secs
+  DNS-lookup:   0.0000 secs, 0.0000 secs, 0.0046 secs
+  req write:    0.0000 secs, 0.0000 secs, 0.0008 secs
+  resp wait:    0.0056 secs, 0.0003 secs, 0.0330 secs
+  resp read:    0.0000 secs, 0.0000 secs, 0.0005 secs
+
+Status code distribution:
+  [201] 100000 responses
