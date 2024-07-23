@@ -53,7 +53,7 @@ make test
 make build-algosync
 ```
 
-## API ручки
+# API ручки
 **CreateMessage()**
 Method: POST
 Request
