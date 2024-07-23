@@ -12,6 +12,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/recover"
+	"github.com/sirupsen/logrus"
 )
 
 type IPBlockConfig struct {
@@ -44,7 +45,6 @@ type server struct {
 // Returns:
 //   - Server: A new instance of a Server interface, which is implemented by the server struct
 func NewServer(infra infra.Infra) Server {
-	logger := logger.GetLogger()
 	infraBlockConfig := infra.Config().Sub("ip_block_config")
 
 	ipBlockConfig := IPBlockConfig{
@@ -63,7 +63,7 @@ func NewServer(infra infra.Infra) Server {
 		}),
 		service:       usecase.NewServiceUseCase(infra),
 		middleware:    middleware.NewMiddleware(infra.Config().GetString("secret.key")),
-		log:           logger,
+		log:           logger.GetLogger(),
 		ipBlockConfig: ipBlockConfig,
 	}
 }
@@ -135,7 +135,10 @@ func (s *server) Run(ctx context.Context) error {
 // is properly configured before handling any requests.
 func (s *server) middlewares() {
 	if s.ipBlockConfig.Enable {
+		logrus.Infof("Protection against Dos and DDoS attacks is: %v", s.ipBlockConfig.Enable)
 		s.app.Use(s.middleware.IPBlock(s.infra.RedisClient(), middleware.IPBlockConfig(s.ipBlockConfig)))
+	} else {
+		logrus.Warnf("Protection against Dos and DDoS attacks is: %v", s.ipBlockConfig.Enable)
 	}
 
 	s.app.Use(recover.New())

@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
+	"github.com/sirupsen/logrus"
 )
 
 type Middleware interface {
@@ -71,11 +72,13 @@ func (m *middleware) RateLimit(rps int) fiber.Handler {
 func (m *middleware) IPBlock(redisClient *redis.Client, config IPBlockConfig) fiber.Handler {
 	if !config.Enable {
 		return func(c fiber.Ctx) error {
+			logrus.Info("test")
 			return c.Next()
 		}
 	}
 
 	return func(c fiber.Ctx) error {
+		logrus.Info("test")
 		ip := c.IP()
 		key := "rate_limit:" + ip
 		blockedKey := "blocked_ips"

@@ -108,7 +108,7 @@ func Init(mode string) {
 			LogLevels: []logrus.Level{logrus.ErrorLevel},
 		})
 	default:
-		l.SetLevel(logrus.InfoLevel)
+		l.SetLevel(logrus.DebugLevel)
 		l.AddHook(&writeHook{
 			Writer:    []io.Writer{os.Stdout},
 			LogLevels: logrus.AllLevels,

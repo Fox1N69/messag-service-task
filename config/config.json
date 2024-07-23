@@ -6,8 +6,8 @@
     "port": 4000
   },
   "database": {
-    "host": "postgres",
-    "port": "5433",
+    "host": "localhost",
+    "port": "5432",
     "user": "postgres",
     "pass": "8008",
     "name": "messaggio"
@@ -16,12 +16,12 @@
     "key": "sercret"
   },
   "redis": {
-    "addr": "redis:6379",
+    "addr": "localhost:6379",
     "password": "",
     "db": 0
   },
   "kafka": {
-    "bootstrap_servers": "kafka:9092",
+    "bootstrap_servers": "localhost:9092",
     "group_id": "message-service-group",
     "topic": "messages"
   },

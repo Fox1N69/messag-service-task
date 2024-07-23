@@ -30,7 +30,7 @@ func main() {
 		log.Info("Connected to PSQLClient")
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, os.Kill)
 	defer stop()
 
 	// Start API server
@@ -43,9 +43,6 @@ func main() {
 
 	<-ctx.Done()
 
-	if os.Getenv("FIBER_PREFORK_CHILD") == "" {
-		log.Info("Shutting down gracefully...")
-	}
-
+	log.Info("Shutting down gracefully...")
 	stop()
 }
