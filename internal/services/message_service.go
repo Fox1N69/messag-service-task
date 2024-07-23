@@ -7,7 +7,7 @@ import (
 )
 
 type MessageService interface {
-	CreateMessage(ctx context.Context, content string, statusID int64) error
+	CreateMessage(ctx context.Context, content string) error
 	GetStatistics(ctx context.Context) (map[string]int64, error)
 	GetMessages(ctx context.Context) ([]database.Message, error)
 	GetMessageByID(ctx context.Context, messageID int64) (database.Message, error)
@@ -32,8 +32,8 @@ func NewMessageService(messageRepository repository.MessageRepository) MessageSe
 	}
 }
 
-func (ms *messageService) CreateMessage(ctx context.Context, content string, statusID int64) error {
-	return ms.repo.Create(ctx, content, statusID)
+func (ms *messageService) CreateMessage(ctx context.Context, content string) error {
+	return ms.repo.Create(ctx, content)
 }
 
 func (ms *messageService) GetStatistics(ctx context.Context) (map[string]int64, error) {

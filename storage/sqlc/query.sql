@@ -1,6 +1,6 @@
 -- name: InsertMessage :exec
-INSERT INTO messages (content, status_id)
-VALUES ($1, $2);
+INSERT INTO messages (content)
+VALUES ($1);
 
 -- name: GetMessages :many
 SELECT id,

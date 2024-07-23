@@ -58,7 +58,9 @@ CreateMessage()
 
 Request
 ```json
-  
+  {
+    "content": "message content"
+  }
 ```
 
 

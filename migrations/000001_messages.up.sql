@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS messages (
   id BIGSERIAL PRIMARY KEY,
   content TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  status_id BIGINT REFERENCES message_status(id),
+  status_id BIGINT REFERENCES message_status(id) DEFAULT 1,
   processed BOOLEAN DEFAULT FALSE,
   kafka_topic VARCHAR(255),
   kafka_partition INTEGER,

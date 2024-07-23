@@ -57,7 +57,7 @@ func (mh *messageHandler) CreateMessage(c fiber.Ctx) error {
 		return response.Error(400, err)
 	}
 
-	err := mh.messageService.CreateMessage(context.Background(), req.Content, req.StatusID)
+	err := mh.messageService.CreateMessage(context.Background(), req.Content)
 	if err != nil {
 		return response.Error(501, err)
 	}

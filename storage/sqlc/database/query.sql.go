@@ -169,17 +169,12 @@ func (q *Queries) GetTotalMessages(ctx context.Context) (int64, error) {
 }
 
 const insertMessage = `-- name: InsertMessage :exec
-INSERT INTO messages (content, status_id)
-VALUES ($1, $2)
+INSERT INTO messages (content)
+VALUES ($1)
 `
 
-type InsertMessageParams struct {
-	Content  string
-	StatusID pgtype.Int8
-}
-
-func (q *Queries) InsertMessage(ctx context.Context, arg InsertMessageParams) error {
-	_, err := q.db.Exec(ctx, insertMessage, arg.Content, arg.StatusID)
+func (q *Queries) InsertMessage(ctx context.Context, content string) error {
+	_, err := q.db.Exec(ctx, insertMessage, content)
 	return err
 }
 
