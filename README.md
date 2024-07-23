@@ -54,8 +54,8 @@ make build-algosync
 ```
 
 ## API ручки
-CreateMessage()
-
+**CreateMessage()**
+Method: POST
 Request
 ```json
   {
@@ -70,6 +70,19 @@ Response
   }
 ```
 
+**GetStatistic()**
+Method: GET
+response
+```json
+
+  {
+    "statistics": {
+      "processed": 5,
+      "processing": 1,
+      "received": 10
+    }
+  }
+```
 
 ## Используемые библиотеки
 
