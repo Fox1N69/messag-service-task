@@ -37,7 +37,8 @@ func (s *PSQLClient) Connect(user, password, host, port, dbname string) error {
 		return fmt.Errorf("%s: failed to parse DSN: %w", op, err)
 	}
 
-	
+	config.MaxConns = 750
+	config.MinConns = 10
 
 	db, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
