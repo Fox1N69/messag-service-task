@@ -58,6 +58,8 @@ services:
       - redis
       - kafka
       - zookeeper
+    deploy:
+      replicas: 3
     ports:
       - "4000:4000"
 
@@ -68,8 +70,21 @@ services:
     container_name: client
     depends_on:
       - service
+    deploy:
+      replicas: 3
     ports:
       - "4001:4001"
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - client
+      - service
 
 volumes:
   postgres-data:

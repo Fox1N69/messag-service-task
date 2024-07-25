@@ -16,9 +16,6 @@ run-client:
 build-client:
 	go build -o bin/client cmd/client/main.go
 
-docker-image:
-	docker build -t server:v1 .
-
 docker-build:
 	docker-compose up --build
 
